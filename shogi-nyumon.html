@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>将棋入門 ｜ 触って覚える将棋の教室</title>
+<meta name="description" content="将棋のルールから定跡・囲い・手筋まで、盤を触りながら学べる入門サイト。駒を減らした練習対局つき。">
+<style>
+:root{
+  --sumi:#0e1720; --panel:#152331; --panel2:#1c2f3f; --line:#2b4257;
+  --washi:#f2ece0; --paper:#fbf7ef; --muted:#93a8ba;
+  --shu:#d24a30; --shu-solid:#bf3f27; --shu-soft:rgba(210,74,48,.20); --kincha:#c9a45a;
+  --ban:#e7c68b; --ban2:#dcb26e; --banline:#6d4f26;
+  --koma:#f3dcaa; --koma-edge:#a97f3d;
+  --mincho:"Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP","Times New Roman",serif;
+  --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--sumi); color:var(--washi); font-family:var(--gothic);
+  font-size:15px; line-height:1.85; -webkit-text-size-adjust:100%;
+}
+a{color:var(--kincha)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+
+/* ---------- header ---------- */
+header.top{padding:38px 0 8px;position:relative}
+.brand{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+h1.logo{
+  font-family:var(--mincho); font-weight:600; font-size:clamp(30px,5vw,44px);
+  letter-spacing:.22em; margin:0; color:var(--paper);
+}
+h1.logo .k{color:var(--kincha)}
+.tag{font-size:12.5px;letter-spacing:.18em;color:var(--muted)}
+.rule{height:2px;background:linear-gradient(90deg,var(--shu) 0 88px,var(--line) 88px 100%);margin:16px 0 0}
+
+/* ---------- 駒型タブ ---------- */
+nav.tabs{display:flex;gap:10px;margin:22px 0 26px;flex-wrap:wrap;align-items:stretch}
+.tab{
+  -webkit-appearance:none;appearance:none;border:0;cursor:pointer;
+  font-family:var(--mincho);font-size:16px;letter-spacing:.14em;
+  background:var(--panel2);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;line-height:1;
+  text-indent:.14em;min-height:50px;
+  padding:15px 22px 12px;min-width:104px;
+  clip-path:polygon(50% 0,88% 13%,100% 100%,0 100%,12% 13%);
+  transition:background .16s,color .16s,transform .16s;
+}
+.tab:hover{color:var(--paper);transform:translateY(-2px)}
+.tab[aria-selected="true"]{background:var(--koma);color:#2a1c08;font-weight:600}
+.tab:focus-visible{outline:2px solid var(--kincha);outline-offset:3px}
+
+/* ---------- layout ---------- */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px;align-items:start}
+.cols.narrow{grid-template-columns:minmax(0,420px) minmax(0,1fr)}
+@media(max-width:900px){.cols,.cols.narrow{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:22px}
+.card+.card{margin-top:20px}
+h2.sec{font-family:var(--mincho);font-size:21px;letter-spacing:.12em;margin:0 0 4px;color:var(--paper);font-weight:600}
+.lead{color:var(--kincha);font-size:13px;letter-spacing:.1em;margin:0 0 16px}
+.prose p{margin:0 0 14px}
+.prose ul{margin:0 0 14px;padding-left:1.15em}
+.prose li{margin:2px 0}
+.prose b{color:var(--paper);font-weight:600}
+.caption{font-size:13px;color:var(--muted);margin:12px 0 0}
+.hr{height:1px;background:var(--line);margin:20px 0}
+
+/* ---------- board ---------- */
+.board-host{display:flex;flex-direction:column;align-items:center;gap:10px;position:relative}
+.banwrap{position:relative;width:100%;max-width:520px}
+svg.ban{width:100%;height:auto;display:block;filter:drop-shadow(0 10px 24px rgba(0,0,0,.45))}
+svg.ban text{font-family:var(--mincho)}
+.cellhit{fill:transparent;cursor:pointer}
+.sq-last-to{fill:var(--shu-soft);stroke:var(--shu);stroke-width:2}
+.sq-last-from{fill:rgba(210,74,48,.07);stroke:var(--shu);stroke-width:1.4;stroke-dasharray:4 4}
+.sq-sel{fill:rgba(90,160,220,.28);stroke:#5aa0dc;stroke-width:2}
+.dot{fill:rgba(30,60,90,.45);pointer-events:none}
+.dot.cap{fill:none;stroke:rgba(30,60,90,.6);stroke-width:3}
+.koma polygon{fill:var(--koma);stroke:var(--koma-edge);stroke-width:1.2}
+.koma text{font-size:23.5px;text-anchor:middle;dominant-baseline:central;fill:#2b1c08;letter-spacing:0}
+.koma.pro text{fill:var(--shu)}
+.koma.moved polygon{stroke:var(--shu);stroke-width:2.2}
+.coord{font-size:13px;fill:#c9b995;text-anchor:middle;dominant-baseline:central}
+
+/* ---------- 駒台 ---------- */
+.handrow{display:flex;align-items:center;gap:8px;width:100%;max-width:520px;
+  background:var(--panel2);border:1px solid var(--line);padding:8px 10px;min-height:52px;flex-wrap:wrap}
+.handrow .lbl{font-family:var(--mincho);font-size:12px;letter-spacing:.14em;color:var(--muted);white-space:nowrap}
+.handpiece{
+  font-family:var(--mincho);font-size:17.5px;cursor:pointer;border:1px solid var(--koma-edge);
+  background:var(--koma);color:#2b1c08;padding:3px 9px 2px;border-radius:2px;position:relative;
+  clip-path:polygon(50% 0,85% 12%,100% 100%,0 100%,15% 12%);min-width:38px;
+}
+.handpiece .cnt{font-family:var(--gothic);font-size:11px;margin-left:3px;vertical-align:2px}
+.handpiece[aria-pressed="true"]{background:#fff2cd;box-shadow:0 0 0 2px #5aa0dc}
+.handpiece:disabled{opacity:.45;cursor:default}
+.handrow.gote .handpiece{transform:rotate(180deg)}
+
+/* ---------- promo dialog ---------- */
+.promo{position:absolute;z-index:20;background:var(--paper);color:#20180c;border:1px solid var(--koma-edge);
+  padding:10px;display:flex;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:var(--mincho)}
+.promo button{font-family:var(--mincho);font-size:15px;padding:7px 14px;cursor:pointer;border:1px solid #b9a375;background:#fff;border-radius:2px}
+.promo button.pri{background:var(--shu);color:#fff;border-color:var(--shu)}
+
+/* ---------- controls ---------- */
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);letter-spacing:.08em}
+select,button.btn{font-family:var(--gothic);font-size:14px}
+select{background:var(--panel2);color:var(--washi);border:1px solid var(--line);padding:8px 10px;border-radius:2px;min-width:150px}
+button.btn{background:var(--panel2);color:var(--washi);border:1px solid var(--line);padding:9px 16px;cursor:pointer;border-radius:2px;transition:background .15s}
+button.btn:hover{background:#26404f}
+button.btn.pri{background:var(--shu);border-color:var(--shu);color:#fff}
+button.btn.pri:hover{background:#e2573c}
+button.btn:disabled{opacity:.4;cursor:default}
+button.btn:focus-visible,select:focus-visible,.chip:focus-visible{outline:2px solid var(--kincha);outline-offset:2px}
+.toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+
+/* ---------- status / kifu ---------- */
+.status{font-family:var(--mincho);font-size:17px;letter-spacing:.08em;margin:0 0 6px;color:var(--paper)}
+.status .warn{color:var(--shu)}
+.lastmove{font-size:13px;color:var(--muted);margin:0 0 14px}
+.lastmove b{color:var(--shu);font-family:var(--mincho);font-size:16px;letter-spacing:.06em}
+.kifu{max-height:290px;overflow:auto;background:var(--sumi);border:1px solid var(--line);padding:10px 12px;
+  font-family:var(--mincho);font-size:14px;line-height:1.95}
+.kifu div{display:flex;gap:10px}
+.kifu .n{color:var(--muted);font-family:var(--gothic);font-size:11px;min-width:26px;text-align:right}
+.kifu .cur{color:var(--shu)}
+.hintbox{border-left:3px solid var(--kincha);background:rgba(201,164,90,.08);padding:10px 14px;font-size:14px;margin:12px 0 0}
+.okbox{border-left:3px solid #4caf7d;background:rgba(76,175,125,.1);padding:10px 14px;font-size:14px;margin:12px 0 0}
+.ngbox{border-left:3px solid var(--shu);background:rgba(210,74,48,.1);padding:10px 14px;font-size:14px;margin:12px 0 0}
+
+/* ---------- chips / lists ---------- */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.chip{font-family:var(--gothic);font-size:13px;background:transparent;border:1px solid var(--line);color:var(--muted);
+  padding:6px 13px;border-radius:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--kincha);border-color:var(--kincha);color:#231a06;font-weight:600}
+.menu{display:flex;flex-direction:column;gap:2px}
+.menu button{text-align:left;background:transparent;border:0;border-left:2px solid transparent;color:var(--washi);
+  font-family:var(--gothic);font-size:14.5px;padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;
+  gap:10px;align-items:baseline;line-height:1.65}
+.menu button>span:first-child{flex:1 1 auto}
+.menu button:hover{background:var(--panel2)}
+.menu button[aria-current="true"]{border-left-color:var(--shu);background:var(--panel2);color:var(--paper)}
+.menu .sub{font-size:11.5px;color:var(--muted);text-align:right;line-height:1.65;flex:0 1 auto}
+.menu .grp{font-family:var(--mincho);font-size:12px;letter-spacing:.16em;color:var(--kincha);margin:14px 0 4px;padding-left:12px}
+.menu .grp:first-child{margin-top:0}
+
+/* ---------- joseki detail ---------- */
+.deftbl{width:100%;border-collapse:collapse;font-size:14px;margin:14px 0 0}
+.deftbl th{text-align:left;white-space:nowrap;color:var(--kincha);font-family:var(--mincho);font-weight:600;
+  letter-spacing:.1em;padding:9px 14px 9px 0;vertical-align:top;width:5.5em;border-top:1px solid var(--line)}
+.deftbl td{padding:9px 0;vertical-align:top;border-top:1px solid var(--line)}
+.stepbar{display:flex;gap:8px;align-items:center;margin:12px 0 0;flex-wrap:wrap}
+.movenote{font-size:14.5px;background:var(--panel2);border:1px solid var(--line);padding:12px 14px;margin:12px 0 0;min-height:64px}
+.movenote .mv{font-family:var(--mincho);font-size:18px;color:var(--shu);letter-spacing:.06em;margin-right:10px}
+.prog{height:3px;background:var(--line);margin:12px 0 0;position:relative}
+.prog i{position:absolute;left:0;top:0;bottom:0;background:var(--shu);transition:width .2s}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- スマートフォン ---------- */
+button,select,input,.cellhit,.handpiece{touch-action:manipulation}
+@media(max-width:760px){
+  body{font-size:15px;line-height:1.8}
+  .wrap{padding:0 10px 56px}
+  header.top{padding:20px 0 4px}
+  nav.tabs{gap:6px;margin:14px 0 16px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  nav.tabs::-webkit-scrollbar{display:none}
+  .tab{min-width:0;flex:0 0 auto;padding:12px 16px 10px;font-size:14px;white-space:nowrap;min-height:44px}
+  .cols,.cols.narrow{gap:16px}
+  .card{padding:15px 13px}
+  .card+.card{margin-top:14px}
+  h2.sec{font-size:19px}
+  /* 盤はできるだけ大きく。横幅いっぱい、ただし画面の高さも超えないように */
+  #pboardcard,.boardcard{padding:8px 6px}
+  .card:has(.board-host){padding:8px 6px}
+  .banwrap,.handrow{max-width:none}
+  .banwrap{max-width:100%}
+  .board-host{gap:7px}
+  @supports(height:100dvh){ .banwrap{max-width:min(100%,calc(100dvh - 250px))} }
+  .handrow{min-height:44px;padding:5px 7px;gap:6px}
+  .handrow .lbl{font-size:11px;letter-spacing:.1em}
+  .handpiece{font-size:18px;padding:4px 9px 3px;min-width:36px}
+  .promo button{padding:10px 18px;font-size:16px}
+  /* 操作系はタップしやすく */
+  .row{gap:8px}
+  label.fld{flex:1 1 100%}
+  select{width:100%;min-width:0;padding:10px}
+  .btn{flex:1 1 calc(50% - 4px);justify-content:center;padding:11px 10px}
+  .stepbar .btn{flex:1 1 calc(50% - 4px)}
+  .kifu{max-height:180px}
+  .deftbl th{width:auto;display:block;padding:10px 0 2px;border-top:1px solid var(--line)}
+  .deftbl td{display:block;padding:0 0 10px}
+  /* 対局タブ：盤のすぐ下に手番・棋譜、設定はその下 */
+  .side{display:flex;flex-direction:column}
+  .side>.card:first-child{order:2;margin-top:14px}
+  .side>.card:nth-child(2){order:1;margin-top:0}
+}
+@media(max-width:380px){
+  .wrap{padding:0 6px 48px}
+  #pboardcard,.boardcard{padding:6px 3px}
+  .tab{padding:10px 13px 8px;font-size:13px;min-height:40px}
+}
+
+/* ---------- 本文中の駒と図版 ---------- */
+k{font-family:var(--mincho);font-style:normal;display:inline-block;background:var(--koma);color:#2b1c08;
+  border:1px solid var(--koma-edge);clip-path:polygon(50% 0,85% 13%,100% 100%,0 100%,15% 13%);
+  min-width:1.75em;text-align:center;padding:3px 5px 2px;font-size:15px;line-height:1.45;
+  margin:0 3px;vertical-align:-3px;letter-spacing:0}
+k.p{color:var(--shu)}
+k.g{transform:rotate(180deg)}
+.fig{margin:18px 0;padding:16px 14px;background:var(--panel2);border:1px solid var(--line)}
+.fig>.cap{font-family:var(--mincho);font-size:13px;letter-spacing:.12em;color:var(--kincha);margin:0 0 12px}
+.mvgrid{display:flex;flex-wrap:wrap;gap:14px}
+.mvcell{width:calc(20% - 12px);min-width:104px}
+.mvcell svg{width:100%;height:auto;display:block;background:var(--ban);border:1px solid var(--banline)}
+.mvcell .nm{font-family:var(--mincho);font-size:14px;color:var(--paper);margin:6px 0 2px;letter-spacing:.08em}
+.mvcell .tx{font-size:11.5px;color:var(--muted);line-height:1.6}
+.mv-line{stroke:#1f4a6d;stroke-width:2.5}
+.mv-dot{fill:#1f4a6d}
+.mv-grid{stroke:var(--banline);stroke-width:.8;opacity:.55}
+.pairs{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:14px;align-items:center}
+.pairs .pr{display:flex;align-items:center;gap:2px;color:var(--muted)}
+.kifubox{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.kifubox .pt{flex:1 1 90px;background:var(--sumi);border:1px solid var(--line);padding:9px 10px;text-align:center}
+.kifubox .pt .c{font-family:var(--mincho);font-size:26px;color:var(--shu);line-height:1.3}
+.kifubox .pt .l{font-size:11px;color:var(--muted);line-height:1.6;margin-top:4px}
+.figboard{max-width:300px}
+.figboard svg{width:100%;height:auto;display:block}
+.figrow{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.figrow>div{flex:1 1 190px}
+.figrow .t{font-family:var(--mincho);font-size:14px;color:var(--paper);margin:0 0 6px;letter-spacing:.08em}
+.figrow .d{font-size:12px;color:var(--muted);line-height:1.7;margin:6px 0 0}
+@media(max-width:760px){
+  .mvcell{width:calc(33.333% - 10px);min-width:0}
+  .fig{padding:13px 10px}
+  .mvcell .tx{display:none}
+}
+@media(max-width:420px){ .mvcell{width:calc(50% - 7px)} }
+.mvcell svg text,.figboard svg text{font-family:var(--mincho)}
+.fig>svg{width:100%;height:auto;display:block;max-width:430px}
+.fig>svg text{font-family:var(--mincho)}
+
+/* ---------- 正解の演出 ---------- */
+.card{position:relative}
+.burst{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:30}
+.burst .ring{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;
+  border-radius:50%;border:3px solid var(--shu);opacity:.9;animation:ringout .85s cubic-bezier(.15,.7,.3,1) forwards}
+.burst .ring.b{animation-delay:.14s;border-color:var(--kincha)}
+.burst .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(210,74,48,.34),transparent 62%);
+  animation:flashout .7s ease-out forwards}
+.burst .p{position:absolute;left:50%;top:50%;width:15px;height:19px;margin:-10px 0 0 -7.5px;
+  background:var(--koma);border:1px solid var(--koma-edge);
+  clip-path:polygon(50% 0,85% 13%,100% 100%,0 100%,15% 13%);
+  transform:translate(0,0) rotate(0deg);opacity:0;
+  animation:komafly 1.15s cubic-bezier(.12,.75,.35,1) forwards}
+.burst .p.s{background:var(--shu);border-color:#8e2c18}
+.burst .p.k{background:var(--kincha);border-color:#8a6d2f}
+.burst .label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:var(--mincho);font-size:clamp(38px,11vw,72px);letter-spacing:.14em;color:var(--shu);
+  text-shadow:0 0 26px rgba(210,74,48,.65),0 3px 0 rgba(0,0,0,.35);white-space:nowrap;
+  animation:popin 1.5s cubic-bezier(.16,1.5,.4,1) forwards}
+.burst .sub{position:absolute;left:50%;top:calc(50% + clamp(30px,7vw,48px));transform:translate(-50%,0);
+  font-family:var(--mincho);font-size:15px;letter-spacing:.2em;color:var(--paper);
+  text-shadow:0 2px 10px rgba(0,0,0,.8);white-space:nowrap;opacity:0;
+  animation:subin 1.5s ease-out .22s forwards}
+@keyframes ringout{0%{transform:scale(.3);opacity:.95}100%{transform:scale(9);opacity:0}}
+@keyframes flashout{0%{opacity:1}100%{opacity:0}}
+@keyframes komafly{
+  0%{transform:translate(0,0) rotate(0deg) scale(.5);opacity:0}
+  12%{opacity:1}
+  70%{opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(1);opacity:0}}
+@keyframes popin{
+  0%{transform:translate(-50%,-50%) scale(.3);opacity:0}
+  45%{transform:translate(-50%,-50%) scale(1.06);opacity:1}
+  78%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
+@keyframes subin{0%{opacity:0}25%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.okbox.big{animation:okpulse .7s ease-out}
+@keyframes okpulse{0%{transform:scale(.96);box-shadow:0 0 0 0 rgba(210,74,48,.5)}
+  100%{transform:scale(1);box-shadow:0 0 0 18px rgba(210,74,48,0)}}
+@media(prefers-reduced-motion:reduce){
+  .burst .p,.burst .ring,.burst .flash{display:none}
+  .burst .label,.burst .sub{animation:subin 1.6s ease-out forwards}
+  .okbox.big{animation:none}
+}
+.notebox{border-left:3px solid var(--shu);background:rgba(210,74,48,.09);padding:11px 14px;font-size:14px;line-height:1.95;margin:12px 0 0}
+#wkifu div{cursor:pointer}
+#wkifu div:hover{background:var(--panel2)}
+
+/* ---------- コース ---------- */
+.card.step{border-left:2px solid var(--line)}
+.card.step.done{border-left-color:#4caf7d;opacity:.82}
+.steptop{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.stepno{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--panel2);
+  border:1px solid var(--line);color:var(--kincha);font-family:var(--mincho);font-size:15px;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.card.step.done .stepno{background:#28513f;border-color:#4caf7d;color:#8fe0b6}
+.card.step .d{margin:0 0 8px;font-size:14px;line-height:1.9}
+.card.step .d2{margin:0;font-size:12.5px;color:var(--muted);line-height:1.85}
+.t2{font-family:var(--mincho);font-size:17px;color:var(--paper);margin:0 0 10px;letter-spacing:.08em}
+#cdetail .figrow>div{flex:1 1 260px}
+#cdetail .card .d{font-size:13.5px;line-height:1.9;margin:0 0 10px}
+#cdetail .card .d2{font-size:12.5px;color:var(--kincha);line-height:1.8;margin:0}
+
+/* ---------- Human Interface Guidelines 準拠の調整 ---------- */
+/* 1. セーフエリア（ノッチ・ホームインジケータ） */
+.wrap{
+  padding-left:max(20px, env(safe-area-inset-left));
+  padding-right:max(20px, env(safe-area-inset-right));
+  padding-bottom:calc(70px + env(safe-area-inset-bottom));
+}
+header.top{padding-top:calc(34px + env(safe-area-inset-top))}
+/* 2. タップ領域は最低 44px 四方 */
+.btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.chip{min-height:44px;display:inline-flex;align-items:center;padding:6px 15px}
+.menu button{min-height:44px}
+.handpiece{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;padding:2px 8px}
+.promo button{min-height:44px;min-width:52px}
+select{min-height:44px}
+.kifu div{min-height:26px;align-items:center}
+#wkifu span[data-p]{min-height:34px;display:inline-flex;align-items:center;padding:2px 4px}
+/* 3. タップ時のフィードバックは自前で。iOS 既定の灰色フラッシュを消す */
+*{-webkit-tap-highlight-color:transparent}
+.btn:active,.chip:active,.menu button:active,.tab:active{filter:brightness(1.35)}
+.handpiece:active,.promo button:active{filter:brightness(.92)}
+.cellhit:active{fill:rgba(255,255,255,.10)}
+/* 4. 白文字を載せるボタンだけ、朱をわずかに濃く（コントラスト 4.4→5.3） */
+.btn.pri{background:var(--shu-solid);border-color:var(--shu-solid)}
+.tab[aria-selected="true"]{background:var(--shu-solid)}
+/* 5. 文字サイズ設定（大きな文字）に追従できるよう、本文は rem 基準に */
+@supports(font:-apple-system-body){ body{font-size:max(15.5px, .97rem)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <h1 class="logo">将棋<span class="k">入門</span></h1>
+    <span class="tag">駒を減らして、盤を触って、少しずつ</span>
+  </div>
+  <div class="rule"></div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="学習メニュー"></nav>
+</header>
+<main id="view"></main>
+<footer style="margin-top:52px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:12.5px;line-height:2">
+  すべての機能がこの一枚のファイルの中で動きます。通信は使いません。<br>
+  対局相手は簡易的な思考ルーチンです。強さは設定で変えられます。
+</footer>
+</div>
+<script>
+/* ============================================================
+   将棋エンジン（ルール・合法手・AI）
+   盤インデックス: i = row*9 + col   row0=一段目(上/後手側)  col0=9筋(左)
+   先手 o=0（下から上へ進む） 後手 o=1
+   ============================================================ */
+const PT_ORDER = ['R','B','G','S','N','L','P'];
+const VAL  = {K:20000,R:1040,B:890,G:690,S:640,N:450,L:430,P:100};
+const PVAL = {R:1300,B:1150,S:700,N:700,L:700,P:600};
+const KJ   = {K:'玉',R:'飛',B:'角',G:'金',S:'銀',N:'桂',L:'香',P:'歩'};
+const KJP  = {R:'竜',B:'馬',S:'全',N:'圭',L:'杏',P:'と'};
+const NAMEJ= {K:'玉将',R:'飛車',B:'角行',G:'金将',S:'銀将',N:'桂馬',L:'香車',P:'歩兵'};
+const NAMEP= {R:'竜王',B:'竜馬',S:'成銀',N:'成桂',L:'成香',P:'と金'};
+const RANKJ= ['一','二','三','四','五','六','七','八','九'];
+const FILEZ= ['１','２','３','４','５','６','７','８','９'];
+
+const STEP = {
+  P:[[-1,0]],
+  N:[[-2,-1],[-2,1]],
+  S:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],
+  G:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],
+  K:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+  L:[],B:[],R:[]
+};
+const SLIDE = { L:[[-1,0]], B:[[-1,-1],[-1,1],[1,-1],[1,1]], R:[[-1,0],[1,0],[0,-1],[0,1]] };
+const DIAG = [[-1,-1],[-1,1],[1,-1],[1,1]];
+const ORTH = [[-1,0],[1,0],[0,-1],[0,1]];
+
+function moveDef(t, promoted){
+  if (promoted){
+    if (t==='R') return {step:DIAG, slide:SLIDE.R};
+    if (t==='B') return {step:ORTH, slide:SLIDE.B};
+    return {step:STEP.G, slide:[]};
+  }
+  return {step:STEP[t]||[], slide:SLIDE[t]||[]};
+}
+const idx=(r,c)=>r*9+c, rowOf=i=>(i/9)|0, colOf=i=>i%9;
+const onBoard=(r,c)=>r>=0&&r<9&&c>=0&&c<9;
+function sq2i(s){ const f=+String(s)[0], r=+String(s)[1]; return idx(r-1, 9-f); }
+function i2sq(i){ return '' + (9-colOf(i)) + (rowOf(i)+1); }
+function i2jp(i){ return FILEZ[8-colOf(i)] + RANKJ[rowOf(i)]; }
+function pieceKanji(pc){ return pc.p ? KJP[pc.t] : (pc.t==='K' ? (pc.o===0?'王':'玉') : KJ[pc.t]); }
+function pieceName(pc){ return pc.p ? NAMEP[pc.t] : NAMEJ[pc.t]; }
+function inZone(o, r){ return o===0 ? r<=2 : r>=6; }
+
+/* ---------- 初期配置 ---------- */
+const BACK = ['L','N','S','G','K','G','S','N','L'];
+function startPieces(){
+  const list=[];
+  for(let c=0;c<9;c++){
+    list.push({i:idx(0,c),o:1,t:BACK[c]});
+    list.push({i:idx(8,c),o:0,t:BACK[c]});
+    list.push({i:idx(2,c),o:1,t:'P'});
+    list.push({i:idx(6,c),o:0,t:'P'});
+  }
+  list.push({i:sq2i('82'),o:1,t:'R'}); list.push({i:sq2i('22'),o:1,t:'B'});
+  list.push({i:sq2i('88'),o:0,t:'B'}); list.push({i:sq2i('28'),o:0,t:'R'});
+  return list;
+}
+
+class Pos{
+  constructor(){ this.b=new Array(81).fill(null); this.hands=[{},{}]; this.turn=0; this.hist=[]; this.lastMove=null; }
+  static start(opts){
+    opts=opts||{};
+    const p=new Pos();
+    const allow=opts.types?new Set(opts.types.concat(['K'])):null;
+    const drop=new Set((opts.handicap||[]).map(sq2i));
+    for(const q of startPieces()){
+      if(allow && !allow.has(q.t)) continue;
+      if(q.o===1 && drop.has(q.i)) continue;
+      p.b[q.i]={t:q.t,o:q.o,p:false};
+    }
+    return p;
+  }
+  static from(spec){
+    const p=new Pos();
+    for(const s of (spec.pieces||[])){
+      p.b[sq2i(s.sq)]={t:s.t,o:s.o,p:!!s.p};
+    }
+    p.hands=[Object.assign({},spec.hands&&spec.hands[0]||{}),Object.assign({},spec.hands&&spec.hands[1]||{})];
+    p.turn=spec.turn||0;
+    return p;
+  }
+  clone(){
+    const p=new Pos();
+    for(let i=0;i<81;i++) p.b[i]=this.b[i]?{t:this.b[i].t,o:this.b[i].o,p:this.b[i].p}:null;
+    p.hands=[Object.assign({},this.hands[0]),Object.assign({},this.hands[1])];
+    p.turn=this.turn; p.lastMove=this.lastMove; return p;
+  }
+  hand(o,t){ return this.hands[o][t]||0; }
+  kingSq(o){ for(let i=0;i<81;i++){ const q=this.b[i]; if(q&&q.o===o&&q.t==='K') return i; } return -1; }
+
+  attacksSq(from, target){
+    const pc=this.b[from]; if(!pc) return false;
+    const s = pc.o===0?1:-1;
+    const {step,slide}=moveDef(pc.t,pc.p);
+    const r=rowOf(from), c=colOf(from), tr=rowOf(target), tc=colOf(target);
+    for(const [dr,dc] of step){ if(r+dr*s===tr && c+dc*s===tc) return true; }
+    for(const [dr,dc] of slide){
+      let nr=r+dr*s, nc=c+dc*s;
+      while(onBoard(nr,nc)){
+        if(nr===tr&&nc===tc) return true;
+        if(this.b[idx(nr,nc)]) break;
+        nr+=dr*s; nc+=dc*s;
+      }
+    }
+    return false;
+  }
+  isAttacked(sq, by){
+    const r=rowOf(sq), c=colOf(sq);
+    for(const [dr,dc] of STEP.K){          // 8方向、最初にぶつかる駒だけ調べる
+      let nr=r+dr, nc=c+dc;
+      while(onBoard(nr,nc)){
+        const j=idx(nr,nc), q=this.b[j];
+        if(q){ if(q.o===by && this.attacksSq(j,sq)) return true; break; }
+        nr+=dr; nc+=dc;
+      }
+    }
+    const kr = by===0 ? r+2 : r-2;         // 桂は飛び越えるので別に調べる
+    if(kr>=0&&kr<9) for(const dc of [-1,1]){
+      const nc=c+dc; if(nc<0||nc>8) continue;
+      const q=this.b[idx(kr,nc)];
+      if(q&&q.o===by&&q.t==='N'&&!q.p) return true;
+    }
+    return false;
+  }
+  inCheck(o){ const k=this.kingSq(o); return k<0?false:this.isAttacked(k,1-o); }
+
+  mustPromote(t,o,to){
+    const r=rowOf(to);
+    if(t==='P'||t==='L') return o===0?r===0:r===8;
+    if(t==='N') return o===0?r<=1:r>=7;
+    return false;
+  }
+  pseudoMoves(o,noDrops){
+    o = (o===undefined)?this.turn:o;
+    const out=[];
+    for(let i=0;i<81;i++){
+      const pc=this.b[i]; if(!pc||pc.o!==o) continue;
+      const s=o===0?1:-1;
+      const {step,slide}=moveDef(pc.t,pc.p);
+      const r=rowOf(i), c=colOf(i);
+      const push=(to)=>{
+        const tgt=this.b[to]; if(tgt&&tgt.o===o) return;
+        const canP = !pc.p && pc.t!=='K' && pc.t!=='G' && (inZone(o,rowOf(to))||inZone(o,r));
+        if(canP) out.push({from:i,to,promote:true});
+        if(!this.mustPromote(pc.t,o,to)) out.push({from:i,to,promote:false});
+      };
+      for(const [dr,dc] of step){ const nr=r+dr*s, nc=c+dc*s; if(onBoard(nr,nc)) push(idx(nr,nc)); }
+      for(const [dr,dc] of slide){
+        let nr=r+dr*s, nc=c+dc*s;
+        while(onBoard(nr,nc)){
+          const to=idx(nr,nc), tgt=this.b[to];
+          if(tgt&&tgt.o===o) break;
+          push(to);
+          if(tgt) break;
+          nr+=dr*s; nc+=dc*s;
+        }
+      }
+    }
+    // 駒を打つ
+    if(noDrops) return out;
+    for(const t of PT_ORDER){
+      if(!this.hand(o,t)) continue;
+      for(let i=0;i<81;i++){
+        if(this.b[i]) continue;
+        const r=rowOf(i);
+        if(this.mustPromote(t,o,i)) continue;           // 行き所のない駒
+        if(t==='P' && this.nifu(o,colOf(i))) continue;  // 二歩
+        out.push({from:null,to:i,drop:t,promote:false});
+      }
+    }
+    return out;
+  }
+  nifu(o,c){
+    for(let r=0;r<9;r++){ const q=this.b[idx(r,c)]; if(q&&q.o===o&&q.t==='P'&&!q.p) return true; }
+    return false;
+  }
+  doMove(m){
+    const u={cap:null,promoted:false,move:m,last:this.lastMove};
+    if(m.drop){ this.b[m.to]={t:m.drop,o:this.turn,p:false}; this.hands[this.turn][m.drop]--; }
+    else{
+      const pc=this.b[m.from];
+      u.cap=this.b[m.to];
+      if(u.cap) this.hands[this.turn][u.cap.t]=(this.hands[this.turn][u.cap.t]||0)+1;
+      this.b[m.from]=null;
+      if(m.promote&&!pc.p){ pc.p=true; u.promoted=true; }
+      this.b[m.to]=pc;
+    }
+    this.lastMove=m; this.turn^=1; this.hist.push(u); return u;
+  }
+  undoMove(){
+    const u=this.hist.pop(); if(!u) return;
+    const m=u.move; this.turn^=1;
+    if(m.drop){ this.b[m.to]=null; this.hands[this.turn][m.drop]++; }
+    else{
+      const pc=this.b[m.to];
+      if(u.promoted) pc.p=false;
+      this.b[m.from]=pc; this.b[m.to]=u.cap||null;
+      if(u.cap) this.hands[this.turn][u.cap.t]--;
+    }
+    this.lastMove=u.last;
+  }
+  legalMoves(o){
+    o=(o===undefined)?this.turn:o;
+    if(o!==this.turn){ const sv=this.turn; this.turn=o; const r=this.legalMoves(o); this.turn=sv; return r; }
+    const out=[];
+    for(const m of this.pseudoMoves(o)){
+      this.doMove(m);
+      const bad=this.inCheck(o);
+      let uchi=false;
+      if(!bad && m.drop==='P' && this.inCheck(1-o)) uchi = this.legalMoves(1-o).length===0; // 打ち歩詰め
+      this.undoMove();
+      if(!bad && !uchi) out.push(m);
+    }
+    return out;
+  }
+  captureMoves(){
+    const o=this.turn, out=[];
+    for(const m of this.pseudoMoves(o,true)){
+      if(!this.b[m.to] && !m.promote) continue;
+      this.doMove(m); const bad=this.inCheck(o); this.undoMove();
+      if(!bad) out.push(m);
+    }
+    return out;
+  }
+  movesFrom(from){ return this.legalMoves().filter(m=>m.from===from); }
+  dropsOf(t){ return this.legalMoves().filter(m=>m.drop===t); }
+  isMate(o){ o=(o===undefined)?this.turn:o; return this.inCheck(o)&&this.legalMoves(o).length===0; }
+  isStuck(o){ o=(o===undefined)?this.turn:o; return this.legalMoves(o).length===0; }
+
+  /* 棋譜表記 */
+  moveText(m, prevTo){
+    const mark = this.turn===0?'▲':'△';
+    const sq = (prevTo!==undefined && prevTo!==null && prevTo===m.to) ? '同　' : i2jp(m.to);
+    if(m.drop) return mark+sq+KJ[m.drop]+'打';
+    const pc=this.b[m.from];
+    let s = mark+sq+pieceKanji2(pc);
+    if(m.promote&&!pc.p) s+='成';
+    else if(!m.promote && !pc.p && pc.t!=='K'&&pc.t!=='G' && (inZone(pc.o,rowOf(m.to))||inZone(pc.o,rowOf(m.from)))) s+='不成';
+    return s;
+  }
+}
+function pieceKanji2(pc){ return pc.p?KJP[pc.t]:KJ[pc.t]; }
+
+/* ---------- 詰将棋の探索 ----------
+   攻方（手番側）は毎手王手をかけ続ける。玉方は合法手すべてで抵抗する。
+   n＝手数（奇数）。詰めば true。 */
+function tsumeAttack(pos, n){
+  if(n<=0) return false;
+  const me=pos.turn;
+  for(const m of pos.legalMoves(me)){
+    pos.doMove(m);
+    const check=pos.inCheck(1-me);
+    if(check){
+      if(tsumeDefend(pos, n-1)){ pos.undoMove(); return true; }
+    }
+    pos.undoMove();
+  }
+  return false;
+}
+function tsumeDefend(pos, n){
+  const me=pos.turn;                 // 玉方
+  const moves=pos.legalMoves(me);
+  if(!moves.length) return true;     // 詰み
+  if(n<=0) return false;             // 手数が尽きた＝逃げ切り
+  for(const m of moves){
+    pos.doMove(m);
+    const mated=tsumeAttack(pos, n-1);
+    pos.undoMove();
+    if(!mated) return false;         // ひとつでも逃れがあれば不詰
+  }
+  return true;
+}
+/* 攻方の手 m が n 手詰の第一手になっているか（m を指した直後の局面を渡す） */
+function tsumeSolutions(pos, n){
+  const out=[], me=pos.turn;
+  for(const m of pos.legalMoves(me)){
+    pos.doMove(m);
+    const ok = pos.inCheck(1-me) && tsumeDefend(pos, n-1);
+    pos.undoMove();
+    if(ok) out.push(m);
+  }
+  return out;
+}
+/* 玉方の最善（いちばん長く粘る）応手 */
+function tsumeDefense(pos, n){
+  const moves=pos.legalMoves(pos.turn);
+  if(!moves.length) return null;
+  let best=null, bestLen=-1;
+  for(const m of moves){
+    pos.doMove(m);
+    let len=n;                        // n 手以内で詰まないなら最長扱い
+    for(let k=1;k<=n;k+=2){ if(tsumeAttack(pos,k)){ len=k; break; } }
+    pos.undoMove();
+    if(len>bestLen){ bestLen=len; best=m; }
+  }
+  return best;
+}
+
+/* ---------- 評価とAI ---------- */
+function pieceValue(pc){ return pc.p ? (PVAL[pc.t]||VAL[pc.t]) : VAL[pc.t]; }
+function evaluate(pos){
+  let sc=0;
+  for(let i=0;i<81;i++){
+    const pc=pos.b[i]; if(!pc) continue;
+    let v=pieceValue(pc);
+    if(pc.t!=='K'){
+      const r=rowOf(i);
+      const adv = pc.o===0 ? (8-r) : r;
+      v += adv*6;                       // 前に出た駒を少し高く
+      if(inZone(pc.o,r)) v+=20;
+    }
+    sc += pc.o===0 ? v : -v;
+  }
+  for(const o of [0,1]){
+    for(const t of PT_ORDER){
+      const n=pos.hand(o,t); if(!n) continue;
+      const v = VAL[t]*1.05*n;
+      sc += o===0? v : -v;
+    }
+  }
+  for(const o of [0,1]){
+    const k=pos.kingSq(o); if(k<0) continue;
+    let guard=0;
+    const r=rowOf(k),c=colOf(k);
+    for(const [dr,dc] of STEP.K){ const nr=r+dr,nc=c+dc; if(!onBoard(nr,nc))continue;
+      const q=pos.b[idx(nr,nc)]; if(q&&q.o===o&&q.t!=='K') guard+=18; }
+    sc += o===0? guard : -guard;
+  }
+  return sc;
+}
+function orderMoves(pos, moves){
+  return moves.map(m=>{
+    let s=0;
+    const cap=pos.b[m.to];
+    if(cap) s+= pieceValue(cap)*10 - (m.from!==null&&pos.b[m.from]?pieceValue(pos.b[m.from]):0);
+    if(m.promote) s+=300;
+    if(m.drop) s-=50;
+    return {m,s};
+  }).sort((a,b)=>b.s-a.s).map(x=>x.m);
+}
+function qsearch(pos, alpha, beta, ctx, d){
+  const sign = pos.turn===0?1:-1;
+  if(ctx.nodes++ > ctx.limit || d>5) return evaluate(pos)*sign;
+  const checked = pos.inCheck(pos.turn);
+  let stand = evaluate(pos)*sign;
+  if(!checked){
+    if(stand>=beta) return beta;
+    if(stand>alpha) alpha=stand;
+  }
+  const moves = checked ? orderMoves(pos,pos.legalMoves()) : orderMoves(pos,pos.captureMoves());
+  if(checked && !moves.length) return -29000+d;
+  for(const m of moves){
+    pos.doMove(m);
+    const v=-qsearch(pos,-beta,-alpha,ctx,d+1);
+    pos.undoMove();
+    if(v>=beta) return beta;
+    if(v>alpha) alpha=v;
+  }
+  return alpha;
+}
+function search(pos, depth, alpha, beta, ctx){
+  if(ctx.nodes++ > ctx.limit) return evaluate(pos)*(pos.turn===0?1:-1);
+  if(depth<=0) return qsearch(pos, alpha, beta, ctx, 0);
+  const moves=orderMoves(pos, pos.legalMoves());
+  if(!moves.length) return -30000+ (10-depth);
+  let best=-Infinity;
+  for(const m of moves){
+    pos.doMove(m);
+    const v=-search(pos, depth-1, -beta, -alpha, ctx);
+    pos.undoMove();
+    if(v>best) best=v;
+    if(best>alpha) alpha=best;
+    if(alpha>=beta) break;
+  }
+  return best;
+}
+function bestMove(pos, level){
+  const maxDepth = level>=3?3:(level===2?2:1);
+  const noise = level===1?260:(level===2?45:10);
+  let moves=orderMoves(pos, pos.legalMoves());
+  if(!moves.length) return null;
+  let best=moves[0];
+  for(let d=1; d<=maxDepth; d++){
+    const ctx={nodes:0, limit: d>=3?90000:40000};
+    let bv=-Infinity, cand=null;
+    for(const m of moves){
+      pos.doMove(m);
+      let v=-search(pos, d-1, -Infinity, Infinity, ctx);
+      pos.undoMove();
+      if(m.promote) v+=6;
+      v += (Math.random()-0.5)*noise;
+      if(v>bv){ bv=v; cand=m; }
+    }
+    if(cand) best=cand;
+    if(ctx.nodes>ctx.limit) break;            // 時間切れ: 前の深さの結果を使う
+    moves = [best].concat(moves.filter(m=>m!==best));   // 次の深さは good手から
+  }
+  return best;
+}
+
+/* ---------- 手順文字列のパース  "7776" / "P*24" / "8833+" ---------- */
+function parseMove(pos, s){
+  s=s.trim();
+  if(s.indexOf('*')>0){
+    const t=s[0], to=sq2i(s.slice(2));
+    return {from:null,to,drop:t,promote:false};
+  }
+  const promote = s.endsWith('+');
+  const core = promote? s.slice(0,-1) : s;
+  return {from:sq2i(core.slice(0,2)), to:sq2i(core.slice(2,4)), promote};
+}
+function sameMove(a,b){
+  return a.to===b.to && (a.from===b.from) && (!!a.promote===!!b.promote) && ((a.drop||null)===(b.drop||null));
+}
+/* ============================================================
+   教材データ
+   ============================================================ */
+
+/* ---------- 練習セット（駒を減らす） ---------- */
+const PRESETS=[
+  {id:'p1', name:'第1段 歩だけ', types:['P'],
+   desc:'玉と歩９枚ずつ。歩の進み方、ぶつかった歩の取り合い、と金づくりだけを覚えます。'},
+  {id:'p2', name:'第2段 金銀を加える', types:['G','S','P'],
+   desc:'金と銀が入ります。守りの中心になる二枚の動きの違いを体で覚える段階です。'},
+  {id:'p3', name:'第3段 桂香も加える', types:['G','S','N','L','P'],
+   desc:'桂と香が入ります。まっすぐ跳ぶ・跳び越えるクセのある駒に慣れます。'},
+  {id:'p4', name:'第4段 飛車を加える', types:['R','G','S','N','L','P'],
+   desc:'大駒の片方、飛車が登場。縦横に走る駒の怖さと、成って竜になる強さを知ります。'},
+  {id:'p5', name:'第5段 平手（フルセット）', types:['R','B','G','S','N','L','P'],
+   desc:'すべての駒がそろった本来の将棋です。'}
+];
+const HANDICAPS=[
+  {id:'h0', name:'なし（平手）', drop:[], gap:'差なし',
+   desc:'同じ戦力で指す、ふつうの将棋です。'},
+  {id:'h1', name:'香落ち', drop:['11'],
+   gap:'ごくわずか', desc:'右の香が一枚ない形。差はほんの少しで、大人どうしの調整に使います。'},
+  {id:'h2', name:'角落ち', drop:['22'],
+   gap:'小さい', desc:'斜めに走る駒がない分、下手は角の利きを気にせず駒組みできます。'},
+  {id:'h3', name:'飛車落ち', drop:['82'],
+   gap:'小さい', desc:'角落ちより少し楽。下手は自分の飛車を存分に使えます。'},
+  {id:'h4', name:'二枚落ち（飛角）', drop:['22','82'],
+   gap:'はっきりある', desc:'大駒二枚がない形。ここから「駒落ちらしさ」が出てきます。'},
+  {id:'h5', name:'四枚落ち（＋両香）', drop:['22','82','11','91'],
+   gap:'大きい', desc:'端から攻められる心配がなくなり、下手はまっすぐ攻めるだけで形になります。'},
+  {id:'h6', name:'六枚落ち（＋両桂）', drop:['22','82','11','91','21','81'],
+   gap:'とても大きい', desc:'跳ねてくる駒もなくなります。子どもと指すなら、まずこのあたりから。'},
+  {id:'h7', name:'八枚落ち（＋両銀）', drop:['22','82','11','91','21','81','31','71'],
+   gap:'いちばん大きい', desc:'相手に残るのは玉と金二枚と歩だけ。攻め方さえ知っていれば、まず負けない形。初めての一局に向きます。'}
+];
+
+/* ---------- ハンデの組み合わせ（診断） ---------- */
+const HANDI_STEPS=[
+  {id:'s1', who:'駒の動きを覚えている最中',
+   preset:'p1', hcp:'h0', level:1,
+   title:'歩だけ将棋',
+   body:'玉と歩だけ、九枚ずつ。歩の進み方と、ぶつかった歩の取り合い、と金づくりだけを覚えます。五分から十分で終わるので、集中が切れる前に決着がつきます。'},
+  {id:'s2', who:'歩と金銀は動かせる',
+   preset:'p2', hcp:'h0', level:1,
+   title:'金銀を足す',
+   body:'守りの二枚が入ります。金は前に強く、銀は斜めに強い——この違いを、取ったり取られたりしながら身体で覚える段階です。'},
+  {id:'s3', who:'全部の駒の動きがわかる',
+   preset:'p5', hcp:'h7', level:1,
+   title:'平手の駒で八枚落ち',
+   body:'ここから自分側は、すべての種類の駒を使います。相手は玉・金二枚・歩だけなので、下手は飛車と角を自由に振り回せます。「攻める楽しさ」を知る一局。'},
+  {id:'s4', who:'八枚落ちで勝てるようになった',
+   preset:'p5', hcp:'h6', level:1,
+   title:'六枚落ち',
+   body:'桂が戻ってきます。跳ねてくる駒への注意が要るようになりますが、まだ端は安全です。'},
+  {id:'s5', who:'六枚落ちで勝てる',
+   preset:'p5', hcp:'h5', level:2,
+   title:'四枚落ち',
+   body:'端の香が戻り、盤の両側に気を配る必要が出てきます。ここまで来たら、囲いも覚えどきです。'},
+  {id:'s6', who:'四枚落ちで勝てる',
+   preset:'p5', hcp:'h4', level:2,
+   title:'二枚落ち',
+   body:'大駒落ちの基本形。定跡（二歩突き切り、銀多伝）があるほど奥が深く、長くつきあえる手合いです。'},
+  {id:'s7', who:'二枚落ちで勝てる',
+   preset:'p5', hcp:'h2', level:3,
+   title:'角落ち・飛車落ち',
+   body:'差はもうわずか。ここを卒業したら平手です。'}
+];
+
+/* ---------- 盤の外でつけるハンデ ---------- */
+const HANDI_TIPS=[
+  {t:'待ったを何回でも許す', d:'いちばん効くハンデです。「今の手だと、ここを取られちゃうよ」と見せてから戻す。取られる形を目で見た記憶のほうが、口で説明するより残ります。'},
+  {t:'指す前に一緒に数える', d:'駒がぶつかったとき、「取ったら、何で取り返される？」を毎回いっしょに声に出す。これだけで、うっかり駒を取られる手がかなり減ります。'},
+  {t:'強いほうは持ち駒を打たない', d:'取った駒を再利用しないと決めるだけで、戦力差が時間とともに開かなくなります。駒落ちより自然に調整できる方法です。'},
+  {t:'強いほうは玉を囲わない', d:'守りを省いた分だけ隙ができます。手加減しているのが子どもに見えにくいのも利点です。'},
+  {t:'持ち時間で差をつける', d:'大人は一手十秒、子どもは考え放題。読む時間そのものを削るので、駒を減らさずに済みます。'},
+  {t:'「玉が敵陣に入ったら勝ち」を足す', d:'詰みがまだ分からない年齢でも、勝ち方が目に見えます。詰ませる代わりに、玉を相手陣の一番奥まで運べたら勝ち。攻めと守りの両方を自然に覚えます。'},
+  {t:'負けそうになったら一枚もらう', d:'途中で持ち駒を一枚あげる「途中ハンデ」。勝負が一方的になった時点で追加すると、最後まで投げ出さずに指せます。'},
+  {t:'一局を短くする', d:'五歳なら、勝ち負けがつくまで十分前後が限界です。長引きそうなら、駒を減らしたセットに切り替えるほうが、途中でやめるより後味がよくなります。'}
+];
+
+/* ---------- レッスン ---------- */
+const LESSONS=[
+ {id:'l1', title:'将棋という勝負', lead:'勝ち負けの決まり方から。',
+  html:`<p>将棋は九×九のマスで、二十枚ずつの駒を動かし合う遊びです。勝ち負けの決まり方はひとつだけ——<b>相手の <k class="g">玉</k> を捕まえたほうが勝ち</b>。次の手で玉が取られる状態を作り、相手が<b>逃げても・取っても・あいだに駒を置いても</b>助からない。これが<b>詰み</b>です。</p>
+  <p>もうひとつ、他のゲームにない仕掛けがあります。<b>取った駒は自分の持ち駒になり、盤の好きな空きマスに打てる</b>。だから盤から駒が消えてなくなることはありません。盤上と駒台を合わせれば、いつでも合計四十枚。取られた駒は相手の駒台に移るだけで、また盤に戻ってきます。</p>
+  <p>下側が<b>先手</b>（▲）、上側が<b>後手</b>（△）。先手から交互に一手ずつ指します。相手の駒は上下逆さまに置かれるので、向きで見分けられます。</p>`,
+  scene:{kind:'view', start:true, caption:'平手の初期配置。まずは眺めるだけで大丈夫です。'}},
+
+ {id:'l2', title:'駒の動き', lead:'八種類、覚えるのは一度きり。',
+  html:`<p>駒は八種類。動きさえ入れば、あとは自然に指せるようになります。まずは図で全体を眺めてください。</p>
+  <div class="fig" data-fig="moves"></div>
+  <p>覚え方のコツは三つ。<k>金</k>は<b>斜め後ろに行けない</b>、<k>銀</k>は<b>真横と真後ろに行けない</b>、<k>桂</k>だけが<b>駒を飛び越えられる</b>。この三点さえ押さえれば、あとは図のとおりです。</p>
+  <p>下の盤で駒を選ぶと、行けるマスに印がつきます。実際に動かして、手の感覚で覚えてください。</p>`,
+  scene:{kind:'pieces'}},
+
+ {id:'l3', title:'成る', lead:'敵陣に入ると駒が変わる。',
+  html:`<p>相手側から三段目までが<b>敵陣</b>です。</p>
+  <div class="fig" data-fig="zone"></div>
+  <p>敵陣に<b>入る・出る・敵陣の中で動く</b>とき、玉と金いがいは<b>成る</b>ことができます。成るかどうかは原則として自由です。ただし例外がひとつ——<b>そのままだと次に動けなくなる場所へ進む場合は、必ず成ります</b>（歩と香が一段目、桂が一〜二段目）。なお、一度成った駒はそれ以上成れませんし、元には戻りません（取られて持ち駒になると、元の駒に戻ります）。</p>
+  <div class="fig" data-fig="promote"></div>
+  <p>とくに <k class="p">竜</k> と <k class="p">馬</k> は別格の強さで、大駒を成れるかどうかが勝敗を分けます。下の盤で、四段目の駒を敵陣へ動かしてみてください。成るかどうかを聞かれます。</p>`,
+  scene:{kind:'free', spec:{pieces:[
+    {sq:'51',o:1,t:'K'},{sq:'59',o:0,t:'K'},
+    {sq:'54',o:0,t:'P'},{sq:'74',o:0,t:'S'},{sq:'24',o:0,t:'R'},{sq:'44',o:0,t:'B'},
+    {sq:'13',o:1,t:'P'},{sq:'93',o:1,t:'P'}],hands:[{},{}],turn:0},
+   caption:'四段目の駒を三段目より上へ動かすと、成るかどうか選べます。'}},
+
+ {id:'l4', title:'王手と詰み', lead:'次に玉が取れる、が王手。',
+  html:`<p>次の手で相手の玉を取れる状態にすることを<b>王手</b>といいます。王手をかけられた側は、必ずそれを解消しなければなりません。方法は三つです。</p>
+  <div class="fig" data-fig="ouji"></div>
+  <p>この三つがどれもできなくなった状態が<b>詰み</b>で、その瞬間に勝敗が決まります。実戦では詰みが見えた時点で、負けのほうが<b>投了</b>するのが普通です。</p>
+  <p>下は一手詰の問題。持ち駒の <k>金</k> をクリックしてから、打つマスを選んでください。</p>`,
+  scene:{kind:'mate', spec:{pieces:[{sq:'51',o:1,t:'K'},{sq:'53',o:0,t:'P'},{sq:'59',o:0,t:'K'}],hands:[{G:1},{}],turn:0},
+   caption:'一手詰。玉の逃げ道がぜんぶ塞がる場所を探します。', hint:'玉の真上に金を打つ。５三の歩が金を支えているので、玉は金を取れません。'}},
+
+ {id:'l5', title:'持ち駒を打つ', lead:'取った駒は、味方になる。',
+  html:`<p>取った駒は<b>駒台</b>に置かれ、以後は自分の駒として空いているマスに打てます。打つのも一手です。相手の戦力を減らして自分の戦力を増やす、二重の得になります。</p>
+  <p>ただし、打つときには禁じ手が三つあります。</p>
+  <div class="fig" data-fig="drop"></div>
+  <p>まん中の「行き所のない駒」は、打つときだけのルールではありません。盤上の駒を動かす場合も同じ場所へは行けず、そのときは<b>必ず成る</b>ことで解決します（レッスン３）。</p>
+  <p>下の盤で持ち駒を打ってみてください。反則になるマスには印がつかないので、ルールを気にせず触れます。</p>`,
+  scene:{kind:'free', spec:{pieces:[
+    {sq:'51',o:1,t:'K'},{sq:'59',o:0,t:'K'},{sq:'57',o:0,t:'P'},{sq:'27',o:0,t:'P'},
+    {sq:'33',o:1,t:'P'},{sq:'73',o:1,t:'P'}],hands:[{P:2,G:1,N:1},{}],turn:0},
+   caption:'５筋と２筋には自分の歩があるので、その筋に歩は打てません（二歩）。桂は一段目・二段目には打てません。'}},
+
+ {id:'l9', title:'棋譜の読み方', lead:'▲７六歩、が読めるようになる。',
+  html:`<p><b>棋譜（きふ）</b>は、指した手を文字で書き残したものです。読めるようになると、本や中継、このサイトの定跡の手順がそのまま追えるようになります。</p>
+  <div class="fig" data-fig="kifuparts"></div>
+  <p>筋は<b>右から</b>１〜９、段は<b>上から</b>一〜九。数字が先で漢数字が後、という順番だけ覚えれば迷いません。</p>
+  <div class="fig" data-fig="suji"></div>
+  <p>読み方は<b>ななろくふ</b>。筋と段を続けて読み、最後に駒名をつけるだけです。数字の読みは筋が いち・に・さん・よん・ご・ろく・なな・はち・きゅう、段が いち・に・さん・よん・ご・ろく・なな・はち・く。</p>
+  <p>うしろに文字が付くことがあります。</p>
+  <ul><li><b>成</b>／<b>不成（ならず）</b>　成るか成らないか。例：▲２二角成</li>
+  <li><b>打（うつ）</b>　持ち駒を打った手。盤の駒が動いた場合と区別が要るときだけ書きます。例：▲５二金打</li>
+  <li><b>同（どう）</b>　直前に相手が指したのと同じマス。例：△同歩。いちいち場所を書かずに済みます。</li></ul>
+  <p>同じマスに二枚以上の駒が行けるときは、どれが動いたかを書き足します。<b>右・左</b>（指す人から見た左右）、<b>上（あがる）</b>＝前へ、<b>引（ひく）</b>＝後ろへ、<b>寄（よる）</b>＝真横から、<b>直（すぐ）</b>＝真下から真上へ。例：▲７八銀上、▲６八金右。</p>
+  <p>細かい表記は後回しで構いません。まず<b>筋と段でマスを言えること</b>。下の盤で確かめて、クイズで身体に入れてください。</p>`,
+  scene:{kind:'coords'}},
+
+ {id:'l6', title:'駒の損得と交換', lead:'ぶつかったら、まず勘定。',
+  html:`<p>駒には価値の差があります。安い駒で高い駒を取れれば得、逆なら損です。</p>
+  <div class="fig" data-fig="value"></div>
+  <p>駒がぶつかったときは「取ったら取り返される」まで数えるクセをつけると、序盤中盤の事故が激減します。</p>
+  <p>そして<b>攻めは <k>飛</k><k>角</k><k>銀</k><k>桂</k>、守りは <k>金</k><k>銀</k></b>。金は前向きの守り、銀は斜めに利くので攻めに向く、と覚えておくと駒組みで迷いません。</p>
+  <p>下は取り合いの練習。どちらの手番も自由に動かせます。</p>`,
+  scene:{kind:'free', spec:{pieces:[
+    {sq:'51',o:1,t:'K'},{sq:'59',o:0,t:'K'},
+    {sq:'55',o:0,t:'S'},{sq:'45',o:1,t:'G'},{sq:'65',o:1,t:'P'},{sq:'56',o:0,t:'P'},{sq:'44',o:1,t:'S'}],hands:[{},{}],turn:0},
+   caption:'銀で金を取れますか。取ったあと、何で取り返されますか。'}},
+
+ {id:'l7', title:'囲うということ', lead:'攻める前に、玉を安全な場所へ。',
+  html:`<p>初心者の負けの大半は「玉を動かさないまま攻めた」ことが原因です。<k>玉</k> は初期位置のまま戦うと、飛車の直射も角の睨みもまともに受けます。序盤にやるべきことは、まず<b>玉を戦場から遠ざけ、<k>金</k><k>銀</k> 二〜三枚で囲う</b>こと。</p>
+  <p>大原則は二つ。<b>玉と飛車は離す</b>（玉飛接近すべからず）。<b>飛車を振った側と反対に玉を囲う</b>。この二つを守るだけで、序盤の形はほぼ整います。</p>
+  <p>下でいくつかの囲いを切り替えて見られます。最初に覚えるなら、居飛車なら<b>舟囲い</b>（四手で組める）、振り飛車なら<b>美濃囲い</b>。矢倉と穴熊は手数がかかるので、その次で構いません。</p>`,
+  scene:{kind:'castle', castle:'mino', caption:'美濃囲い。振り飛車党なら、まずこの形から。'}},
+
+ {id:'l8', title:'一局の流れ', lead:'序盤・中盤・終盤で、考えることが変わる。',
+  html:`<p><b>序盤</b>——駒組み。玉を囲い、<k>飛</k><k>角</k> の道を開け、攻めの形（<k>銀</k>と<k>桂</k>）を作ります。この段階では駒はほとんどぶつかりません。何を作るかを決めるのが定跡です。</p>
+  <p><b>中盤</b>——戦いの開始。<k>歩</k> をぶつけて突破口を作り、駒を交換して持ち駒を得ます。合言葉は<b>三手一組</b>。「突く・取る・取り返す」まで読んで、初めて一つの攻めです。</p>
+  <p><b>終盤</b>——寄せ。玉に迫る段階では<b>駒の損得より速度</b>。一手でも早く詰ませたほうが勝ちなので、飛車を捨ててでも一手を稼ぎます。</p>
+  <p>「囲う→攻める→寄せる」。この順番を崩さないだけで、勝率ははっきり変わります。</p>`,
+  scene:{kind:'view', start:true, caption:'ここまで来たら「対局」タブへ。駒を減らした練習から始めるのがおすすめです。'}}
+];
+
+/* ---------- 囲い（守りの形） ---------- */
+const CASTLES={
+ yagura:{name:'矢倉', side:'居飛車', pieces:[
+   {sq:'88',o:0,t:'K'},{sq:'78',o:0,t:'G'},{sq:'67',o:0,t:'G'},{sq:'77',o:0,t:'S'},
+   {sq:'89',o:0,t:'N'},{sq:'99',o:0,t:'L'},{sq:'97',o:0,t:'P'},{sq:'87',o:0,t:'P'},
+   {sq:'76',o:0,t:'P'},{sq:'66',o:0,t:'P'},{sq:'56',o:0,t:'P'}],
+  good:'金銀三枚が斜めに連結し、正面からの攻めにめっぽう強い。相居飛車の主戦場。',
+  bad:'横からの攻めと、端（９筋）に弱い。組み上がるまで手数がかかる。'},
+ mino:{name:'美濃囲い', side:'振り飛車', pieces:[
+   {sq:'28',o:0,t:'K'},{sq:'38',o:0,t:'S'},{sq:'49',o:0,t:'G'},{sq:'58',o:0,t:'G'},
+   {sq:'29',o:0,t:'N'},{sq:'19',o:0,t:'L'},{sq:'16',o:0,t:'P'},{sq:'27',o:0,t:'P'},{sq:'37',o:0,t:'P'}],
+  good:'玉をわずか三手（５九→４八→３八→２八）で安全地帯まで運べ、少ない手数で完成する。横からの攻めに強く、振り飛車の標準装備。そのまま高美濃・銀冠へ発展できる。',
+  bad:'上からの攻めに弱い。端攻めと、４一や１三に打ち込む筋が急所。'},
+ anaguma:{name:'穴熊', side:'居飛車／振り飛車', pieces:[
+   {sq:'99',o:0,t:'K'},{sq:'98',o:0,t:'L'},{sq:'88',o:0,t:'S'},{sq:'79',o:0,t:'G'},{sq:'68',o:0,t:'G'},
+   {sq:'89',o:0,t:'N'},{sq:'96',o:0,t:'P'},{sq:'87',o:0,t:'P'},{sq:'76',o:0,t:'P'}],
+  good:'玉が隅に入るので王手がかかりにくく、受けに手を使わずに攻められる。終盤で粘りが利くのが最大の強み。',
+  bad:'完成まで十手以上かかる。組む前に攻められると間に合わず、崩れ出すと一直線。'},
+ funa:{name:'舟囲い', side:'居飛車（対振り飛車）', pieces:[
+   {sq:'68',o:0,t:'K'},{sq:'78',o:0,t:'G'},{sq:'58',o:0,t:'G'},{sq:'79',o:0,t:'S'},{sq:'77',o:0,t:'B'},
+   {sq:'69',o:0,t:'N'},{sq:'76',o:0,t:'P'},{sq:'67',o:0,t:'P'},{sq:'87',o:0,t:'P'}],
+  good:'四手で組める軽い囲い。すぐ攻めに移れるので、振り飛車への急戦とセットで使う。',
+  bad:'薄い。持久戦になると力負けするので、攻めきる算段があるときだけ。'},
+ hidarimino:{name:'左美濃', side:'居飛車（対振り飛車）', pieces:[
+   {sq:'88',o:0,t:'K'},{sq:'78',o:0,t:'S'},{sq:'69',o:0,t:'G'},{sq:'58',o:0,t:'G'},
+   {sq:'89',o:0,t:'N'},{sq:'99',o:0,t:'L'},{sq:'97',o:0,t:'P'},{sq:'87',o:0,t:'P'},{sq:'76',o:0,t:'P'}],
+  good:'美濃を左右反転させた形。振り飛車の攻めが来る方向に対して横に強い。',
+  bad:'角のラインと端攻めが弱点。'}
+};
+
+/* ---------- 定跡 ---------- */
+const JOSEKI=[
+ {id:'kihon', cat:'序盤の考え方', name:'序盤の三本柱（居飛車）', tag:'居飛車の立ち上がり',
+  summary:'居飛車を指すときの基本的な立ち上がりです。角道を開ける・飛車先を伸ばす・角の頭を金で守る。この三つ。なお振り飛車では組み方がまったく違います（対抗形の項を参照）。',
+  aim:'開始直後に何を指せばいいか分からない状態を抜け出す。',
+  point:'▲７六歩は角の道を通す手。▲２六歩から▲２五歩は飛車の前を伸ばして突破口を作る手。そして▲７八金は、角の頭（７七）を守る手です。ここは初期配置では金銀の利きがなく、相居飛車の序盤でとくに狙われやすい地点です。',
+  weak:'伸ばした飛車先はいずれ受け止められます。次にどこから攻めるか——その答えが以下の戦型です。',
+  moves:['7776','3334','2726','8384','2625','8485','6978','4132'],
+  notes:['▲７六歩。角道を開ける。将棋でもっとも多く指される初手です。','△３四歩。後手も同じく角道を開けます。',
+   '▲２六歩。飛車の前の歩を伸ばし、攻めの筋を作ります。','△８四歩。後手も飛車先を伸ばす。ここまでほぼ自動です。',
+   '▲２五歩。もう一つ伸ばして、次に▲２四歩の突破を狙います。','△８五歩。同じ狙いで押し返す。',
+   '▲７八金。ここが急所。角の頭（７七）を金で守り、△８六歩からの突破を消します。','△３二金。後手も同じ理由で角頭を守りました。互角の立ち上がりです。']},
+
+ {id:'bogin', cat:'攻めの戦型（相居飛車）', name:'棒銀', tag:'いちばん最初に覚える攻め',
+  summary:'銀を飛車の前にまっすぐ繰り出し、飛車と銀の二枚で一点を破る。理屈が単純で、決まったときの破壊力が大きい、入門者の最初の武器です。',
+  aim:'２筋（右端から二列目）に飛車・銀・歩を集め、２四の地点を突破して敵陣に成り込む。',
+  point:'銀の道順は３八→２七→２六→２五。歩の交換で持ち駒に歩を持ってから、もう一度２四に歩を打つのが突破の合図です。攻めは「三手一組」——突く・取る・取り返す、までが一つの攻めだと考えます。',
+  weak:'攻めに人手をかける分、自玉は薄いまま。反対側（８筋）から先に破られると逆転されます。攻めが受け止められたときの立て直しが難しい戦法でもあります。',
+  moves:['7776','3334','2726','8384','2625','8485','6978','4132','2524','2324','2824','P*23','2428','7162',
+         '3938','3142','3827','4233','2726','5354','2625','8586','P*24','2324','2524','3324','2824'],
+  notes:['▲７六歩','△３四歩','▲２六歩','△８四歩','▲２五歩','△８五歩','▲７八金','△３二金',
+   '▲２四歩。まず歩を交換して、持ち駒に歩を得ます。','△同歩','▲同飛。飛車が２四に出ました。',
+   '△２三歩。後手は歩を打って飛車を追い返します。','▲２八飛。目的は達成、いったん引きます（歩が一枚手に入った）。',
+   '△６二銀','▲３八銀。ここから銀の行進が始まります。','△４二銀','▲２七銀','△３三銀。後手も２四の地点を守りに来ました。',
+   '▲２六銀','△５四歩','▲２五銀。銀が飛車の前に立ちました。飛・銀・歩が２筋に集中しています。',
+   '△８六歩。後手も反対側から反撃。ここからは速度勝負です。',
+   '▲２四歩。持ち駒の歩を打つ。これが棒銀の決め手です。','△同歩','▲同銀。銀が敵陣一歩手前に到達。',
+   '△同銀','▲同飛。２四に飛車が居座り、次に成り込みます。銀は手持ちに。突破成功です。']},
+
+ {id:'yagura', cat:'相居飛車', name:'矢倉', tag:'じっくり組み合う本格戦',
+  summary:'お互いに角道を止め、金銀三枚の城を作ってから戦う戦型。「将棋の純文学」と呼ばれます。手数はかかりますが、駒組みの理屈がいちばん分かりやすい。',
+  aim:'▲７七銀・▲７八金・▲６七金・▲８八玉の「矢倉」を完成させ、右の銀桂と飛車で攻める。',
+  point:'銀は７九→６八→７七、玉は５九→６九→７九→８八。角は８八にいると玉が入れないので、いったん７九へ出してから６八へ引きます。この順番には全部理由があります。',
+  weak:'組み上がるまで長い。途中で急戦を仕掛けられると、囲いが未完成のまま戦うことになります。横からの攻めと端攻めも弱点。',
+  moves:['7776','8384','7968','3334','6877','7162','5756','5354','3948','3142','4958','6152','6766','4344',
+         '5867','5243','6978','4233','5969','4132','8879','5141','7968','2231','6979','3142','7988','4131'],
+  notes:['▲７六歩','△８四歩','▲６八銀。矢倉を目指す一手。','△３四歩','▲７七銀。角の頭を銀で守りました。',
+   '△６二銀','▲５六歩','△５四歩','▲４八銀','△４二銀','▲５八金右','△５二金右','▲６六歩。角道を止め、矢倉戦に決定。',
+   '△４四歩','▲６七金。金銀が斜めに連結してきました。','△４三金','▲７八金。これで金二枚が並びます。','△３三銀',
+   '▲６九玉。玉が右から左へ引っ越しを始めます。','△３二金','▲７九角。玉の通り道を空けるため、角が一度出ます。','△４一玉',
+   '▲６八角。角は落ち着き先へ。','△３一角','▲７九玉','△４二角','▲８八玉。入城。７七銀・７八金・６七金・８八玉で矢倉の完成です。','△３一玉']},
+
+ {id:'kakugawari', cat:'相居飛車', name:'角換わり', tag:'序盤で角を交換する',
+  summary:'序盤で角をお互い交換してしまう戦型。角が手持ちになるので、盤上のどこにでも打ち込める緊張感が常にあります。隙のない駒組みが要求される、現代将棋の主戦場。',
+  aim:'角交換後、打ち込まれる隙をなくしながら、腰掛け銀（５六銀）などの形を作って先に仕掛ける。',
+  point:'角を手持ちにされた側は、自陣の「斜めの傷」を消さなければなりません。▲８八銀と上がるのは、角を打たれやすい７九・６九の地点をカバーする意味です。',
+  weak:'一手でも隙のある形になると、即座に角を打ち込まれます。定跡の暗記量が多く、入門者がいきなり選ぶには難しい戦型。',
+  moves:['7776','8384','2726','8485','8877','3334','7988','2277+','8877','3122','3938','7162'],
+  notes:['▲７六歩','△８四歩','▲２六歩','△８五歩','▲７七角。飛車先の突破を受けると同時に、角交換の準備。',
+   '△３四歩。これで後手の角にも道が通りました。','▲８八銀。角が交換されたあと、８八を銀で埋める用意です。',
+   '△７七角成。後手から角を交換しました。','▲同銀。銀が自然といい位置へ上がりました。',
+   '△２二銀','▲３八銀','△６二銀。互いに角の打ち込みに備えながらの駒組みが続きます。']},
+
+ {id:'yokofu', cat:'相居飛車', name:'横歩取り', tag:'序盤から激しい',
+  summary:'お互いの飛車先の歩を交換したあと、先手が３四の歩を横から取ってしまう戦型。序盤十数手でいきなり大乱戦になります。',
+  aim:'歩を一枚得したまま戦えるかどうか。後手は得された代わりに、素早い駒組みと反撃を狙います。',
+  point:'▲３四飛と歩を取った瞬間、飛車は敵陣の目の前で無防備です。ここから後手の猛反撃が始まるので、実は「得した」と喜べません。',
+  weak:'一手間違えると即座に終わる、事故率の高い戦型。定跡から外れたときの対応が難しく、入門者向けではありません。',
+  moves:['7776','3334','2726','8384','2625','8485','6978','4132','2524','2324','2824','8586','8786','8286','2434'],
+  notes:['▲７六歩','△３四歩','▲２六歩','△８四歩','▲２五歩','△８五歩','▲７八金','△３二金',
+   '▲２四歩。飛車先の歩を交換します。','△同歩','▲同飛','△８六歩。後手も同じことを反対側で。','▲同歩','△同飛',
+   '▲３四飛。これが「横歩取り」。取った歩の分だけ得ですが、両者の飛車が敵陣近くで宙に浮いた、危険な形になりました。']},
+
+ {id:'shiken', cat:'対抗形（振り飛車）', name:'四間飛車＋美濃囲い', tag:'覚えることが少ない',
+  summary:'飛車を左から四つ目の筋（６筋）に振り、玉は反対の右へ囲う。手数が短く、形が崩れにくいので、入門者が最初に選ぶ戦型として長年いちばん人気があります。',
+  aim:'美濃囲いに素早く収まり、相手の攻めを受け止めてから、角と飛車で捌く（駒を交換して軽くする）。',
+  point:'指す順番は「角道を開ける→飛車を振る→玉を囲う」。玉は飛車と反対側へ三手で移動し、３八銀・５八金で美濃が完成します。振り飛車は受けの戦法で、相手が来るのを待つのが基本姿勢です。',
+  weak:'居飛車穴熊に組まれると、固さで負けて苦しくなります。自分から攻める形を作りにくいのも弱点。',
+  moves:['7776','8384','6766','3334','2868','8485','8877','7162','5948','5142','4838','4232','3828','5354','3938','7374','6958','6364','1716','1314'],
+  notes:['▲７六歩','△８四歩','▲６六歩。角道を止め、振り飛車を明示。','△３四歩','▲６八飛。四間飛車の完成です。',
+   '△８五歩','▲７七角。飛車先を受けます。','△６二銀','▲４八玉。囲いへ出発。','△４二玉','▲３八玉','△３二玉',
+   '▲２八玉。三手で玉が右端へ。','△５四歩','▲３八銀。玉の右を銀で固めます。','△７四歩','▲５八金左。美濃囲いの完成。',
+   '△６四歩','▲１六歩。端歩は美濃の逃げ道を作る大事な一手。','△１四歩']},
+
+ {id:'nakabisha', cat:'対抗形（振り飛車）', name:'中飛車', tag:'攻めたい人の振り飛車',
+  summary:'飛車を５筋（真ん中）に振る戦型。振り飛車の中では珍しく、自分から中央を攻めていけます。狙いが分かりやすく、初段くらいまでは十分に通用します。',
+  aim:'５筋の歩を伸ばして中央を圧迫し、飛車・銀・角を中央に集中させて突破する。',
+  point:'▲５五歩と位を取ると、相手の駒が前に出られなくなります。中央を制圧してから、玉を右に囲うのが手順。攻めながら囲えるのがこの戦法の効率のよさです。',
+  weak:'飛車が中央にいるので、玉と近くなりがち。「玉飛接近すべからず」の原則との折り合いに注意が必要です。',
+  moves:['5756','3334','2858','8384','5655','8485','5948','7162','4838','5142','3828','4232','3938','6152'],
+  notes:['▲５六歩。中飛車宣言の初手。','△３四歩','▲５八飛。飛車が中央へ。','△８四歩','▲５五歩。中央の位を取りました。',
+   '△８五歩','▲４八玉','△６二銀','▲３八玉','△４二玉','▲２八玉','△３二玉','▲３八銀。美濃囲いが完成。',
+   '△５二金右。中央の圧力と美濃の堅さ、両方が手に入りました。']}
+];
+
+/* ---------- 攻めの手筋（クイズ） ---------- */
+const TESUJI=[
+ {id:'t1', name:'ふんどしの桂', quiz:true,
+  spec:{pieces:[{sq:'33',o:1,t:'G'},{sq:'53',o:1,t:'S'},{sq:'11',o:1,t:'K'},{sq:'59',o:0,t:'K'}],hands:[{N:1},{}],turn:0},
+  answers:['45'], q:'持ち駒の桂で、金と銀の両方に当てるには？',
+  exp:'桂は前二つ先の左右へ跳ぶので、４五に打つと３三と５三の両方に当たります。両取りのことを「ふんどしの桂」と呼びます。桂は打つ駒としても優秀で、逃げ道のない相手を捕まえるのに向いています。'},
+ {id:'t2', name:'割り打ちの銀', quiz:true,
+  spec:{pieces:[{sq:'41',o:1,t:'G'},{sq:'61',o:1,t:'G'},{sq:'11',o:1,t:'K'},{sq:'59',o:0,t:'K'}],hands:[{S:1},{}],turn:0},
+  answers:['52'], q:'持ち駒の銀で、二枚の金を同時に狙うには？',
+  exp:'銀は斜め前に二方向利くので、金と金の間の下に打つと両方に当たります。相手の金二枚が横に並んだら、この筋がないか必ず確認しましょう。'},
+ {id:'t3', name:'田楽刺し', quiz:true,
+  spec:{pieces:[{sq:'54',o:1,t:'S'},{sq:'52',o:1,t:'R'},{sq:'11',o:1,t:'K'},{sq:'59',o:0,t:'K'}],hands:[{L:1},{}],turn:0},
+  answers:['56','57','58'], q:'持ち駒の香で、銀とその奥の飛車を串刺しにするには？',
+  exp:'香はどこまでも前に走るので、同じ筋の下から打てば手前の銀と奥の飛車を同時に狙えます。銀が逃げれば飛車が取れる——串団子に見立てて「田楽刺し」。なるべく遠くから打つのがコツで、取られにくくなります。'},
+ {id:'t4', name:'垂れ歩', quiz:true,
+  spec:{pieces:[{sq:'31',o:1,t:'K'},{sq:'32',o:1,t:'G'},{sq:'13',o:1,t:'P'},{sq:'33',o:1,t:'P'},{sq:'59',o:0,t:'K'},{sq:'77',o:0,t:'P'}],hands:[{P:1},{}],turn:0},
+  answers:['24'], q:'持ち駒の歩を、次に成って「と金」を作れる場所に打つには？',
+  exp:'敵陣の一つ手前に歩を打っておく手を「垂れ歩」といいます。次に一歩進めば「と金」。と金は金と同じ働きなのに、取られても歩一枚しか損しない、攻めで最強の駒です。「と金の遅早（おそはや）」——遅く見えていちばん早い、という格言があります。'}
+];
+
+const TESUJI_CARDS=[
+ {name:'継ぎ歩', text:'歩を突き捨てたあと、同じ筋にもう一度歩を打つ。相手の歩を前におびき出して、その裏に垂れ歩や飛車の道を作ります。'},
+ {name:'十字飛車', text:'縦に利いている飛車の横に、相手の大駒が並んだ瞬間を狙う。飛車の縦横二方向の利きを同時に使う両取りです。'},
+ {name:'桂頭の歩', text:'桂は前に跳ぶだけで、真ん前のマスには利いていません。だから桂の頭に歩を打つ・突くと、桂は取り返せないまま捕まります。跳ねてきた桂を咎める基本手筋。（似た言葉に「桂頭の玉、寄せにくし」がありますが、こちらは玉を桂の頭に置くと安全という守りの格言で、意味が逆です。）'},
+ {name:'底歩', text:'守りの手筋。自陣の最下段に歩を打つと、横からの飛車の攻めをぴたりと止められます。「金底の歩、岩より固し」。'},
+ {name:'合駒請求', text:'香や飛車で遠くから王手をかけ、相手に合駒を打たせてからそれを取る。詰ますのに足りない駒を手に入れるのが主な目的で、同時に相手の持ち駒も減らせます。'}
+];
+
+/* ---------- 一手詰ドリル ---------- */
+const TSUME={
+ 1:[
+  {spec:{pieces:[{sq:'51',o:1,t:'K'},{sq:'53',o:0,t:'P'},{sq:'59',o:0,t:'K'}],hands:[{G:1},{}],turn:0},
+   hint:'玉の頭に金を打つ。取り返されないように、支えのある場所を選びます。'},
+  {spec:{pieces:[{sq:'51',o:1,t:'K'},{sq:'53',o:0,t:'G'},{sq:'59',o:0,t:'K'}],hands:[{S:1},{}],turn:0},
+   hint:'銀を玉の頭に。銀は斜め前にも利くので、逃げ道の４一・６一も同時に押さえます。５三の金が４二・６二を見ています。'},
+  {spec:{pieces:[{sq:'11',o:1,t:'K'},{sq:'23',o:0,t:'P'},{sq:'59',o:0,t:'K'}],hands:[{G:1},{}],turn:0},
+   hint:'端に追い詰められた玉。金を斜めに打つと、１二にも２一にも逃げられません。'},
+  {spec:{pieces:[{sq:'91',o:1,t:'K'},{sq:'62',o:0,t:'R'},{sq:'99',o:0,t:'K'}],hands:[{S:1},{}],turn:0},
+   hint:'６二の飛車が二段目を横一列に押さえています。飛車が支えているマスに銀を打てば、玉は取ることも逃げることもできません。'},
+  {spec:{pieces:[{sq:'91',o:1,t:'K'},{sq:'81',o:1,t:'P'},{sq:'93',o:0,t:'P',p:true},{sq:'99',o:0,t:'K'}],hands:[{N:1},{}],turn:0},
+   hint:'味方の歩が８一をふさいでいます。と金が９二を押さえているので、あとは玉の頭を一か所だけ。跳ねる駒の出番です。'},
+  {spec:{pieces:[{sq:'41',o:1,t:'K'},{sq:'23',o:0,t:'P',p:true},{sq:'72',o:0,t:'R',p:true},{sq:'99',o:0,t:'K'}],hands:[{S:1},{}],turn:0},
+   hint:'７二の竜が横一列を、と金が三段目を押さえています。玉の頭に打てば、斜め前の逃げ道も銀が消します。'},
+  {spec:{pieces:[{sq:'51',o:1,t:'K'},{sq:'41',o:1,t:'L'},{sq:'61',o:1,t:'L'},{sq:'85',o:0,t:'B'},{sq:'99',o:0,t:'K'}],hands:[{R:1},{}],turn:0},
+   hint:'味方の香が逃げ道を塞いでいます。８五の角が支えている地点に、飛車を打ちます。'}
+ ],
+ 3:[
+  {spec:{pieces:[{sq:'31',o:1,t:'K'},{sq:'23',o:0,t:'R'},{sq:'99',o:0,t:'K'}],hands:[{G:1},{}],turn:0},
+   hint:'まず飛車を成って竜を作ります。玉は逃げるしかなく、逃げた先の頭に金を打てば終わりです。'},
+  {spec:{pieces:[{sq:'21',o:1,t:'K'},{sq:'43',o:0,t:'R',p:true},{sq:'99',o:0,t:'K'}],hands:[{G:1},{}],turn:0},
+   hint:'竜を玉の頭のとなりへ寄せて王手。逃げ道は一つしか残らないので、そこを金でふさぎます。'},
+  {spec:{pieces:[{sq:'11',o:1,t:'K'},{sq:'33',o:0,t:'L',p:true},{sq:'99',o:0,t:'K'}],hands:[{B:1,S:1},{}],turn:0},
+   hint:'３三の成香が２二を支えています。まず銀を捨てるつもりで打ち、玉を一段下に呼び出してから角。'},
+  {spec:{pieces:[{sq:'91',o:1,t:'K'},{sq:'73',o:0,t:'R'},{sq:'99',o:0,t:'K'}],hands:[{G:1},{}],turn:0},
+   hint:'端の玉。飛車を成りながら王手すると、逃げ場所は一つだけ。そこへ金を打ち下ろします。'},
+  {spec:{pieces:[{sq:'81',o:1,t:'K'},{sq:'93',o:0,t:'N',p:true},{sq:'99',o:0,t:'K'}],hands:[{R:1,S:1},{}],turn:0},
+   hint:'成桂が９二・８二を押さえています。飛車で王手して玉を左へ追い、追った先を銀でふさぎます。'},
+  {spec:{pieces:[{sq:'31',o:1,t:'K'},{sq:'13',o:0,t:'L'},{sq:'43',o:0,t:'G'},{sq:'99',o:0,t:'K'}],hands:[{R:1},{}],turn:0},
+   hint:'４三の金が４二を押さえています。飛車を打って王手し、玉が端へ寄ったら、一筋の香が働きます。'},
+  {spec:{pieces:[{sq:'21',o:1,t:'K'},{sq:'12',o:1,t:'P'},{sq:'33',o:0,t:'R'},{sq:'31',o:0,t:'S'},{sq:'99',o:0,t:'K'}],hands:[{P:1,N:1},{}],turn:0},
+   hint:'いきなり大きな駒を使わないこと。ただの歩を玉の頭に打って動かし、空いた地点に桂を跳ね込みます。'},
+  {spec:{pieces:[{sq:'11',o:1,t:'K'},{sq:'34',o:0,t:'G'},{sq:'13',o:0,t:'N'},{sq:'99',o:0,t:'K'}],hands:[{R:1},{}],turn:0},
+   hint:'一筋の桂が１三に利いています。飛車を打って玉を動かしたら、最後は持ち駒ではなく盤上の金が働きます。'}
+ ],
+ 5:[
+  {spec:{pieces:[{sq:'81',o:1,t:'K'},{sq:'93',o:0,t:'R'},{sq:'99',o:0,t:'K'}],hands:[{R:1},{}],turn:0},
+   hint:'飛車二枚だけで詰みます。成って王手、逃げたらもう一枚を打って王手、また逃げたら竜を寄せる。追う方向を一定に保つのがコツです。'},
+  {spec:{pieces:[{sq:'91',o:1,t:'K'},{sq:'63',o:0,t:'B',p:true},{sq:'99',o:0,t:'K'}],hands:[{B:1,S:1},{}],turn:0},
+   hint:'まず馬を玉に近づけて王手。玉が下がったところへもう一枚の角を打ち、成って迫ります。最後は銀で押さえます。'},
+  {spec:{pieces:[{sq:'42',o:1,t:'K'},{sq:'35',o:0,t:'B'},{sq:'99',o:0,t:'K'}],hands:[{R:1,G:1},{}],turn:0},
+   hint:'３五の角が一三まで利いています。飛車を遠くから打って玉を上ずらせ、金で退路を消してから角を成ります。'},
+  {spec:{pieces:[{sq:'42',o:1,t:'K'},{sq:'23',o:0,t:'R',p:true},{sq:'53',o:0,t:'P'},{sq:'99',o:0,t:'K'}],hands:[{L:1,N:1},{}],turn:0},
+   hint:'桂を跳ねて王手すると、玉は横へ逃げるしかありません。逃げた先の頭に香を打ち、最後は竜が寄って詰みます。'},
+  {spec:{pieces:[{sq:'81',o:1,t:'K'},{sq:'64',o:0,t:'B'},{sq:'99',o:0,t:'K'}],hands:[{B:1,S:1},{}],turn:0},
+   hint:'銀を打って玉を動かし、角を成ります。逃げた玉に対して、もう一枚の角を離れたところから打つのが最後の一手です。'},
+  {spec:{pieces:[{sq:'71',o:1,t:'K'},{sq:'52',o:0,t:'B'},{sq:'63',o:0,t:'G'},{sq:'99',o:0,t:'K'}],hands:[{R:1},{}],turn:0},
+   hint:'６三の金が退路を限定しています。角を成って馬を作り、玉を端へ追い込んでから飛車を打ち下ろします。'}
+ ]
+};
+const MATES=TSUME[1];
+
+/* ---------- 観戦用モデル対局 ---------- */
+const GAMES=[
+  {id:"g-bogin", name:"棒銀で２筋を破る", cat:"相居飛車",
+   lead:"棒銀が２筋に殺到し、角と銀の交換に成功する。攻めの銀を使い切る形。", end:"先手優勢（後手投了）",
+   moves:["7776","8384","2726","8485","8877","3334","7988","7172","2625","2233","3938","3142","3827","6364","2726","7263","2615","7374","2524","2324","1524","3324","2824","P*23","2428","4233","6978","5142","B*46","3435","4635","3334","3513+"],
+   notes:{"1":"先手は角道を開ける。この一手で角が７七から３三まで通る。","3":"２筋の歩を進めた。棒銀は「飛車のいる筋で銀を前線に押し出す」戦法なので、この筋が主戦場になる。","5":"角を７七に上がって、８筋から飛車が来ても受け止められるようにした。","9":"２五まで進めて、後手の２三の歩と向かい合う。ここから銀を繰り出す準備。","10":"後手は角を３三に上がって２四の地点を守った。","13":"銀が動き出す。３九→３八→２七→２六→１五。四手かけて前線へ運ぶのが棒銀で、その間に相手に何をされるかが勝負どころ。","17":"１五まで来た。狙いは▲２四歩から銀を突っ込むこと。","18":"後手はまだ７四歩とのんびり指している。棒銀の速度に対して一手遅い。","19":"ここが仕掛け。歩を捨てて、２四の地点を空ける。","21":"銀が２四に到達。飛車が２八から支えているので、ただでは取られない。","22":"△同角。角と銀の交換になり後手が損をするが、じつはこの時点で２四に取り返せる駒が角しかない。負担が生じていたのは１８手目——７四歩とのんびり指して一手遅れたところ。","23":"角を手に入れた。銀と角の交換は、この時点でほぼ勝敗を分ける差。","29":"手に入れた角を打つ。狙いは▲１三角成で馬を作ること。","33":"馬ができた。駒得に加えて、馬は攻めにも守りにも効く最強の駒。後手が投了する局面。"}},
+  {id:"g-yagura", name:"矢倉から３筋の総交換", cat:"相居飛車",
+   lead:"二十八手かけて組み合ってから、３七桂・４六銀の形で３筋に手をつける。", end:"互角（ここから中盤）",
+   moves:["7776","8384","7968","3334","6877","7162","5756","5354","3948","3142","4958","6152","6766","4344","5867","5243","6978","4233","5969","4132","8879","5141","7968","2231","6979","3142","7988","4131","3736","8485","4837","6364","3746","6263","2937","7374","3635","3435","4635","3334","3534","4334"],
+   notes:{"3":"矢倉は銀を６八から７七へ運ぶところから始まる。二十手以上かけて陣形を作る、我慢の戦型。","13":"６六歩と角道を止めた。矢倉は「大駒を交換しない」ことが前提の戦い方。","19":"玉が動き出す。５九→６九→７九→８八と、三手かけて矢倉の中へ入る。","27":"先手が入城。ここまで二十八手、まだ一枚も駒がぶつかっていない。矢倉とはそういう戦型。","29":"ようやく戦いの準備。３六歩から３七桂・４六銀の形を目指す。","33":"４六銀。この銀と３七の桂が矢倉の攻撃陣で、次に３五歩が実現すれば攻めが決まる。","37":"仕掛け。歩をぶつけて、相手の３四歩を釣り上げる。","40":"後手も銀を出して受ける。ここから３四の地点で駒がぶつかり合う。","42":"歩・銀を交換して一段落。先手には３七の桂が残り、次に▲４五桂と跳ねる手が生じている。"}},
+  {id:"g-kakugawari", name:"角換わりの仕掛け", cat:"相居飛車",
+   lead:"序盤で角を交換し、腰掛け銀に構えてから３五歩と動く。", end:"互角（ここから中盤）",
+   moves:["7776","8384","2726","8485","8877","3334","7988","2277+","8877","3122","3938","7162","3736","2233","5968","7374","6878","8173","3837","6364","3746","6263","4958","5142","3635","3435","4635","3344","3544","4344"],
+   notes:{"7":"８八銀。角交換を誘っている。","8":"後手から角を交換した。「角換わり」の名前どおり、序盤で大駒が一枚ずつ手に入る。","9":"同銀と取り返す。以降おたがい持ち駒に角があるので、隙のあるところに打ち込まれる。玉を固く囲うのが大事になる。","15":"角を持ち合っている将棋では、玉が薄いと一気に潰される。まず玉を移動させる。","19":"３七銀から４六銀。銀を早めに前線へ出すこの形を「早繰り銀」と呼ぶ。角換わりにはほかに、銀を５六に据える「腰掛け銀」もある。","25":"仕掛け。角換わりの主戦場も、やはり３筋になることが多い。","28":"後手は銀を４四に上がって対抗した。","30":"銀を交換して歩で取り返した形。おたがい持ち駒に角と銀があり、ここからが本当の戦い。"}},
+  {id:"g-shiken", name:"四間飛車が捌く", cat:"対抗形",
+   lead:"美濃に囲って待ち、４五歩から角を捌く振り飛車の呼吸。", end:"振り飛車が指しやすい",
+   moves:["7776","8384","6766","3334","2868","8485","8877","7162","5948","5142","4838","4232","3828","5354","3938","7374","6958","6364","1716","1314","5756","3142","4746","8586","8786","8286","P*87","8682","4645","4344","4544","2244"],
+   notes:{"5":"飛車を左から四つ目の筋に振る。これが四間飛車。","9":"ここからは玉。振り飛車は飛車を振った側と反対に玉を囲うのが鉄則。","13":"２八玉。３八銀・５八金と組めば美濃囲いの完成で、横からの攻めにめっぽう強い。","19":"端歩を突き合う。美濃囲いは端が急所なので、この一手が後で効く。","24":"後手が８筋から仕掛けた。","27":"歩を打って受ける。振り飛車は攻め合いを急がず、まず相手の攻めを切らせる。","29":"ここで反撃。振り飛車の狙いは、飛車と角の道を開けて「捌く」こと。","32":"角で取り返して、２二にいた角が４四で使える駒になった。これが振り飛車の言う「捌けた」形。"}},
+  {id:"g-nakabisha", name:"中飛車の５筋突破", cat:"対抗形",
+   lead:"５筋の歩をぶつけて飛車を進出させ、中央を制圧する。", end:"互角（先手が主導権）",
+   moves:["5756","3334","2858","8384","5655","8485","5948","7162","4838","5142","3828","4232","3938","6152","5554","5354","5854","P*53","5455","7374","7776","8586","8786","8286","P*87","8682","5545"],
+   notes:{"1":"いきなり中央の歩から。中飛車は盤の真ん中を制圧する戦型。","3":"五筋に飛車を振る。飛車・角・歩が中央に集まり、力がひとつの筋に集中する。","7":"ここでも玉を先に囲う。飛車を振ったら玉は反対側、が振り飛車の基本。","15":"仕掛け。歩をぶつけて、飛車の前を開ける。","17":"飛車が５四まで出た。中飛車の理想形のひとつ。","19":"いったん引く。取られる位置に長居しないのが飛車の使い方。","22":"後手も８筋から反撃してきた。","25":"歩を打って受け止める。相手の飛車を追い返せば、こちらの手番が戻ってくる。","27":"飛車を右に回した。中央から横へ、盤全体を使えるのが中飛車の強み。"}},
+  {id:"g-yokofu", name:"横歩取りの応酬", cat:"相居飛車",
+   lead:"おたがい飛車先を交換し、三四の歩を取る激しい出だし。自陣角で落ち着かせるまで。", end:"互角（激しい中盤へ）",
+   moves:["7776","3334","2726","8384","2625","8485","6978","4132","2524","2324","2824","8586","8786","8286","2434","2288+","7988","B*33","3436","3122","P*87","8682","B*77","5162"],
+   notes:{"9":"いきなり２筋の歩を交換する。相掛かりから横歩取りへ進む出だし。","12":"後手も８筋で同じことをする。おたがい飛車先の歩を捌く、それが相掛かり。","15":"ここで３四の歩をタダで取るのが「横歩取り」。ただし飛車が敵陣近くで浮くので、危険と隣り合わせ。","16":"さっそく角を切ってきた。横歩取りは激しい変化になりやすい。","18":"角を打ち直す。３三に据えると８八までの長い斜めが通り、自陣の傷も消える。横歩取りで後手がよく用いる形。","19":"飛車は３六に引いて安全地帯へ。取られる位置に飛車を置かないのが鉄則。","21":"歩を打って相手の飛車を追い返す。攻め合いの最中でも、受けの一手を惜しまない。","23":"自陣に角を打つ。守りの角として長く働き、８筋も睨む一石二鳥の一手。"}},
+  {id:"g-aigakari", name:"相掛かりから棒銀", cat:"相居飛車",
+   lead:"角道を開けずに飛車先だけを伸ばし合う。低い陣形なので銀の速攻が刺さる。", end:"先手優勢",
+   moves:["2726","8384","2625","8485","7978","3132","7776","3334","2524","2324","2824","P*23","2428","7172","3938","6364","3827","7263","2726","5142","2615","1314","P*24","2324","1524","4252","2423+"],
+   notes:{"1":"先手も後手も飛車先の歩を伸ばし合う。これが相掛かり。おたがい角道を開けないのが特徴。","9":"まず２筋の歩を交換して、飛車を２八に引く。相掛かりの基本形。","15":"ここから棒銀。相掛かりは陣形が低いので、銀の速攻が成立しやすい。","21":"１五まで銀が出た。次に▲２四歩と打つ手を狙っている。","22":"△１四歩と受けたが、これは銀の進路を止めるだけで、２筋の傷は残ったまま。","23":"持ち駒の歩を打つ。ここが仕掛け。","25":"銀が２四に到達。今度は後手に取り返す駒がない。","27":"銀が成って成銀に。敵陣に居座る成銀は、金と同じ動きで守りも攻めもこなす強力な駒になる。"}},
+  {id:"g-sanken", name:"三間飛車と美濃囲い", cat:"対抗形",
+   lead:"飛車を三筋に振り、七七へ寄る。玉は反対側の美濃へ。", end:"互角（美濃が完成）",
+   moves:["7776","3334","6766","8384","2878","4142","7877","8485","5948","5141","4838","3132","3828","5354","3938","7172","4958","6364","1716","1314"],
+   notes:{"5":"飛車を左から三つ目の筋に振る。これが三間飛車。四間飛車より一路左で、攻めが早いのが持ち味。","7":"すぐに７七へ寄る。角の頭を守りつつ、７筋の攻めを狙う形。","9":"ここからは玉。振り飛車は玉を反対側へ運ぶのが鉄則で、これを守るかどうかで勝率が変わる。","13":"２八玉。あとは３八銀・５八金で美濃囲いの完成。","17":"美濃囲いが完成した。金銀三枚が固まって、横からの攻めに非常に強い。","19":"端歩を突く。美濃囲いは端が弱点なので、突き合っておくと後で受けやすくなる。"}},
+  {id:"g-anaguma", name:"居飛車穴熊に組む", cat:"対抗形",
+   lead:"玉を盤の隅まで運ぶ、いちばん堅い囲いの作り方を通しで。", end:"互角（穴熊が完成）",
+   moves:["7776","3334","2726","4344","3948","8242","5968","5162","6878","6272","8877","7282","7888","3132","9998","7172","8899","5354","7988","6364"],
+   notes:{"4":"後手が４四歩。振り飛車にする合図。","6":"四間飛車に振ってきた。ここで先手は「穴熊にしよう」と決める。","7":"穴熊は玉を九九（盤の隅）まで運ぶ囲い。完成まで十手以上かかるが、その価値がある。","11":"角を７七に上がる。玉が８八を通るために、先に角をどかす必要がある。","15":"９八香。この一手で玉の入る穴が開く。","17":"９九玉。玉が盤の隅に入った。ここまでが「穴熊」の名前の由来。","19":"８八銀で蓋をする。玉のまわりに金銀三枚、しかも隅なので、王手がかかりにくい。持久戦になるほど有利になる囲い。"}},
+  {id:"g-migishiken", name:"右四間飛車の攻め形", cat:"対抗形",
+   lead:"飛車・角・銀・桂を四筋に集める。狙いが一点で分かりやすい戦法。", end:"互角（ここから四筋の戦い）",
+   moves:["7776","3334","6766","8384","4746","7172","2848","5142","5968","3132","6878","5354","7877","6364","6968","8485","5756","7374","4645","4344"],
+   notes:{"5":"４六歩。これから飛車を４八に振る、右四間飛車の出だし。","7":"４八飛。飛車・角・銀・桂の四枚が４筋一点に集まる、わかりやすい攻めの形。","9":"ここでも玉を反対側へ。攻めの形ができても、玉が薄ければ勝てない。","13":"７七玉まで来た。攻めと守りの準備が両方そろった。","19":"４五歩。ここが仕掛け。四枚が一点に集まっているので、破れれば一気に決まる。","20":"後手は４四歩と受けた。ここから４筋の攻防が始まる。"}},
+  {id:"g-ukebogin", name:"棒銀を受け切る", cat:"受け方",
+   lead:"攻められる側の教材。二四を守る駒を増やせば、棒銀は怖くない。", end:"後手が受け切り成功",
+   moves:["7776","8384","2726","8485","2625","3334","3938","3142","3827","4233","2726","4132","2615","5142","2524","2324","1524","3324","2824","P*23","2428","5354"],
+   notes:{"7":"先手が棒銀を始めた。","9":"後手の受け方に注目。２七に銀が来たのを見て、","10":"△３三銀。２四の地点に守りを一枚足した。棒銀への受けは「２四を守る駒を増やす」が基本。","12":"△３二金。これで２四には銀と金が利いている。","15":"仕掛けてきたが、","18":"△同銀と取り返せる。守りを足しておいたおかげで、駒損せずに済んだ。","21":"飛車は引き上げるしかなく、攻めは失敗。銀を一枚交換しただけで、後手は無事に受け切った。","22":"受け切ったあとは、こちらが指したい手を指せる。棒銀は受け方を知っていれば怖くない。"}},
+  {id:"g-nokakoi", name:"囲わずに攻めた失敗例", cat:"受け方",
+   lead:"玉を一度も動かさずに攻めるとどうなるか。十六手で結論が出る。", end:"先手が苦しい",
+   moves:["7776","3334","2726","8384","2625","8485","2524","2324","2824","8586","8786","8286","2434","2288+","7988","8676"],
+   notes:{"1":"先手はこれから、玉を一度も動かさずに攻める。何が起きるか見てほしい。","7":"いきなり２筋を突破しにいった。玉は五九のまま。","9":"飛車が２四へ。ここまでは成功に見える。","13":"３四の歩も取った。駒得だが、玉はまだ初期位置。","14":"ここで角を切られた。８八の角と刺し違えて、後手の角が馬になる寸前。","15":"取り返したが、","16":"飛車が７六に飛び込んできた。先手陣は玉のまわりに守り駒がなく、飛車が自由に暴れられる。攻めた側が一気に苦しくなった。囲いを省いた代償がこれ。"}},
+];
+
+/* ---------- 王手と詰みの型 ---------- */
+const CHECKS=[
+ {n:'直接王手', d:'動かした駒そのものが玉を睨む、いちばんふつうの王手。受け方は「逃げる・取る・遮る」の三択。'},
+ {n:'開き王手（あきおうて）', d:'手前の駒をどかすことで、その後ろにいた飛車・角・香の利きが通る王手。動かした駒と王手をかけている駒が別なので見落としやすい。どかした駒が同時に別の駒を取れれば、受けようがない一手になる。'},
+ {n:'両王手', d:'開き王手のうち、動かした駒も同時に王手をかけているもの。二枚から同時に王手なので、合駒も、片方を取ることも効かない。<b>玉が逃げるしかない</b>のが特徴で、寄せの決め手になりやすい。'},
+ {n:'桂の王手', d:'桂は駒を飛び越えるので、<b>あいだに合駒を置いて防ぐことができない</b>。受け方は「逃げる」か「桂を取る」の二つだけ。堅い囲いを崩す最後の一手によく使われる。'},
+ {n:'飛・角・香の王手', d:'遠くから利かせる王手。逆に言えば、あいだに一枚置けば止まる。合駒が利くかどうかで、詰むか詰まないかが変わる。'},
+ {n:'王手放置は反則', d:'王手をかけられているのに、それを解消しない手を指すと、その時点で負け。うっかりで一局が終わるので、王手されたら必ず一度手を止めること。'},
+ {n:'打ち歩詰めは反則', d:'持ち駒の歩を<b>打って</b>詰ますのは禁止。ただし盤上の歩を<b>突いて</b>詰ますのは合法。同じ形でも打つか突くかで結論が変わる、将棋でいちばん紛らわしいルール。'}
+];
+const MATESHAPES=[
+ {id:'atamakin', n:'頭金（あたまきん）', d:'玉の真上に金を打つ、いちばん基本の詰み。金は前と横を全部押さえるので、玉に行き場がなくなる。飛車や竜が下から支えていれば、金は取られない。実戦でもっとも多く現れる詰み形で、まずこれを覚える。',
+  pieces:[{sq:'51',o:1,t:'K'},{sq:'52',o:0,t:'G'},{sq:'59',o:0,t:'R'}]},
+ {id:'haragin', n:'腹金（はらきん）', d:'玉の真上ではなく、横（腹）から打つ形。玉が端に寄っていて、上に逃げ道がないときに決まる。上から押さえる駒（ここでは角）と組み合わせて使う。',
+  pieces:[{sq:'12',o:1,t:'K'},{sq:'13',o:1,t:'P'},{sq:'22',o:0,t:'G'},{sq:'45',o:0,t:'B'},{sq:'29',o:0,t:'R'}]},
+ {id:'shirikin', n:'端に追い詰める', d:'玉を盤の端まで追ってから金を打つ。端は逃げ道が半分しかないので、真ん中より少ない駒で詰む。「玉は端に追え」はここから来た格言。',
+  pieces:[{sq:'91',o:1,t:'K'},{sq:'92',o:1,t:'P'},{sq:'81',o:0,t:'G'},{sq:'89',o:0,t:'R'}]},
+ {id:'keima', n:'桂で詰ます', d:'玉のまわりが自分の駒でふさがっているとき、桂の王手は合駒が利かないので致命傷になる。守り駒が多いのに詰む、という不思議な現象が起きる形。',
+  pieces:[{sq:'51',o:1,t:'K'},{sq:'41',o:1,t:'G'},{sq:'61',o:1,t:'G'},{sq:'42',o:1,t:'N'},{sq:'52',o:1,t:'P'},{sq:'62',o:1,t:'P'},{sq:'43',o:0,t:'N'}]},
+ {id:'ryu', n:'竜で横一線', d:'竜は横に走るので、玉が一段目にいると横一列を全部押さえられる。上の逃げ道が自分の駒でふさがっていれば、それだけで詰み。「玉は下段に落とせ」という格言の根拠。',
+  pieces:[{sq:'51',o:1,t:'K'},{sq:'42',o:1,t:'P'},{sq:'52',o:1,t:'P'},{sq:'62',o:1,t:'P'},{sq:'11',o:0,t:'R',p:true}]},
+ {id:'hasami', n:'挟み撃ち', d:'馬が斜めから、金が正面から。方向の違う二枚で挟むと、逃げ道が一気に消える。「攻め駒は三枚」が目安とされるが、馬や竜は一枚で二枚ぶんの働きをするので、この形は二枚で足りている。',
+  pieces:[{sq:'51',o:1,t:'K'},{sq:'52',o:0,t:'G'},{sq:'41',o:0,t:'B',p:true}]},
+ {id:'tsurigane', n:'香で串刺し', d:'端に追われた玉に、香を下から打つ。あいだに合駒を打っても、香が一枚ずつ食い破っていけば、いずれ詰む。端玉に香、は覚えておく価値がある。',
+  pieces:[{sq:'11',o:1,t:'K'},{sq:'12',o:0,t:'G'},{sq:'13',o:0,t:'L'}]},
+ {id:'ana', n:'と金で詰ます', d:'と金は金と同じ動きで、しかも元は歩。取られても痛くないので、玉の近くまで進めれば最強の攻め駒になる。「と金の遅早（おそはや）」——作るのは遅いが、効き始めると早い。',
+  pieces:[{sq:'11',o:1,t:'K'},{sq:'21',o:1,t:'N'},{sq:'22',o:1,t:'P'},{sq:'12',o:0,t:'P',p:true},{sq:'14',o:0,t:'L'}]}
+];
+const YOSE=[
+ {n:'詰めろ', d:'「次に指せば詰み」という状態にすること。相手は受けるか、それより早く攻めるかを選ばされる。終盤は、駒を取る手より詰めろをかける手のほうが価値が高い。'},
+ {n:'必至（ひっし）', d:'どう受けても詰みを防げない詰めろ。必至をかけた時点で、相手に残された道は「自分のほうが先に詰ます」しかない。'},
+ {n:'退路を先に塞ぐ', d:'いきなり王手をかけると、玉は広いほうへ逃げてしまう。先に逃げ道を押さえてから王手をかけるほうが、少ない駒で詰む。「王手は追う手」——むやみな王手はかえって玉を安全地帯へ送ってしまう。'},
+ {n:'金はとどめに残せ', d:'金は詰ますときにいちばん役立つ駒。途中で使ってしまわず、最後の一手のために取っておく。逆に、相手に金を渡すのは自分の玉を危険にする。'},
+ {n:'攻め駒は三枚', d:'玉を詰ますには、目安として攻め駒が三枚。二枚では足りないことが多く、四枚あれば余裕があります。ただし馬・竜は一枚で二枚ぶんの働きをするので、その場合は二枚でも詰みます。攻めが続かないときは、たいてい三枚目が足りていません。'},
+ {n:'終盤は駒の損得より速度', d:'序盤中盤は駒得が大事だが、寄せ合いに入ったら「何手で詰むか」がすべて。一手早ければ、飛車を捨てても勝ち。ここの切り替えができるかが、強い人との差になる。'},
+ {n:'自分の玉を数える', d:'攻める前に「自分は何手で詰まされるか」を数える。相手より一手早ければ攻め切り、遅ければ受けに回る。終盤の判断はほぼこれで決まる。'}
+];
+
+/* ---------- 学習コース ---------- */
+const COURSE_BASE=[
+ {id:'b1', t:'駒の動きを覚える', why:'ここが分からないと何も始まりません。八種類、動き方だけ。',
+  do:'図で全体を眺めたら、下の盤で駒を選んで、光ったマスに動かしてみてください。',
+  go:{tab:'learn', idx:1}, cta:'レッスンを開く'},
+ {id:'b2', t:'歩だけで一局指す', why:'ルールを全部覚えてから指す必要はありません。歩の進み方と取り方だけで、もう勝負になります。',
+  do:'相手の陣地に歩を入れて「と金」を作れば勝ちに近づきます。五分で終わります。',
+  go:{tab:'play', preset:'p1', hcp:'h0', level:1}, cta:'歩だけ将棋を始める'},
+ {id:'b3', t:'成るを覚える', why:'敵陣に入った駒は強くなります。とくに飛車と角が成れるかどうかが勝敗を分けます。',
+  do:'四段目の駒を敵陣へ動かすと、成るかどうかを聞かれます。',
+  go:{tab:'learn', idx:2}, cta:'レッスンを開く'},
+ {id:'b3b', t:'持ち駒を打つ', why:'取った駒を自分の駒として使える——これが将棋をチェスと分ける最大の仕掛けです。',
+  do:'二歩などの反則マスには印がつかないので、ルールを気にせず触れます。',
+  go:{tab:'learn', idx:4}, cta:'レッスンを開く'},
+ {id:'b4', t:'金銀を足して指す', why:'守りの駒が入ります。金は前に強く、銀は斜めに強い——この違いを取り合いながら覚えます。',
+  do:'駒がぶつかったら「取ったら、何で取り返される？」を毎回考えてください。',
+  go:{tab:'play', preset:'p2', hcp:'h0', level:1}, cta:'金銀入りで指す'},
+ {id:'b5', t:'駒の損得を覚える', why:'初心者の負けの大半は、駒をタダで取られることです。価値の順番を頭に入れます。',
+  do:'飛車と角がとくに大事。金と銀を交換するのは損、と覚えるところから。',
+  go:{tab:'learn', idx:6}, cta:'レッスンを開く'},
+ {id:'b6', t:'詰みの形を目に焼きつける', why:'詰将棋が解けないのは才能ではなく、ゴールの形を知らないからです。',
+  do:'八つの図を、手を考えずに眺めてください。「玉が動けない」ことだけ確認します。',
+  go:{tab:'yose', pend:'shape'}, cta:'詰みの形を見る'},
+ {id:'b7', t:'一手詰を解く', why:'形を覚えたら、そこへ持っていく一手を探す番です。',
+  do:'七問あります。分からなければヒントを押してください。',
+  go:{tab:'drill', mode:'t1', i:0}, cta:'一手詰を解く'},
+ {id:'b8', t:'八枚落ちで一局指す', why:'ここで初めて全種類の駒を使います。相手は玉と金二枚と歩だけなので、攻める練習に集中できます。',
+  do:'飛車と角を残さず前線へ。駒落ちでは、攻める駒を全部使うのが基本です。',
+  go:{tab:'play', preset:'p5', hcp:'h7', level:1}, cta:'八枚落ちで指す'}
+];
+const COURSE_A=[
+ {id:'a1', t:'棋譜の読み方を覚える', why:'▲７六歩が読めると、本も中継も定跡も、そのまま追えるようになります。',
+  do:'筋と段の言い方を確かめて、場所あてクイズを何問か。',
+  go:{tab:'learn', idx:5}, cta:'レッスンを開く'},
+ {id:'a2', t:'舟囲いを覚える', why:'棒銀は居飛車の戦法なので、囲いも居飛車用の舟囲いを使います。三〜四手で組める簡易な囲い。',
+  do:'完成図と、強いところ・弱いところを確認します。',
+  go:{tab:'joseki', castle:'funa'}, cta:'舟囲いを見る'},
+ {id:'a3', t:'棒銀を自分で再現する', why:'手順を眺めるだけでは指せるようになりません。実際に盤で指してみます。',
+  do:'「自分で指してみる」モードで開きます。定跡どおりの手を指すと相手が応じます。',
+  go:{tab:'joseki', line:'bogin', practice:true}, cta:'棒銀を指してみる'},
+ {id:'a4', t:'棒銀が決まる一局を観る', why:'覚えた形が、実戦でどう勝ちにつながるかを通して見ます。',
+  do:'三十三手。二十二手目の△同角が敗着です。',
+  go:{tab:'watch', id:'g-bogin'}, cta:'観戦する'},
+ {id:'a5', t:'棒銀の受け方も知る', why:'自分が使う戦法は、相手にも使われます。受け方を知っていれば怖くありません。',
+  do:'二四を守る駒を足すだけで受け切れる、という一局です。',
+  go:{tab:'watch', id:'g-ukebogin'}, cta:'観戦する'},
+ {id:'a6', t:'三手詰に進む', why:'一手詰が解けたら、次は「追ってから詰ます」段階です。',
+  do:'八問。相手が逃げてくるので、逃げ道を先に消すことを意識してください。',
+  go:{tab:'drill', mode:'t3', i:0}, cta:'三手詰を解く'},
+ {id:'a7', t:'六枚落ちで一局指す', why:'八枚落ちで勝てるようになったら一段上げます。相手に桂が戻ります。',
+  do:'棒銀の形を作って、二筋から攻めてみてください。',
+  go:{tab:'play', preset:'p5', hcp:'h6', level:1}, cta:'六枚落ちで指す'}
+];
+const COURSE_B=[
+ {id:'c1', t:'棋譜の読み方を覚える', why:'▲７六歩が読めると、本も中継も定跡も、そのまま追えるようになります。',
+  do:'筋と段の言い方を確かめて、場所あてクイズを何問か。',
+  go:{tab:'learn', idx:5}, cta:'レッスンを開く'},
+ {id:'c2', t:'美濃囲いを覚える', why:'振り飛車の標準装備。玉を三手で安全地帯へ運べて、横からの攻めに非常に強い囲いです。',
+  do:'完成図と、弱点（上からの攻めと端）を確認します。',
+  go:{tab:'joseki', castle:'mino'}, cta:'美濃囲いを見る'},
+ {id:'c3', t:'四間飛車を自分で組む', why:'飛車を左から四つ目に振り、玉を反対側に囲う。振り飛車の基本形です。',
+  do:'「自分で指してみる」モードで開きます。玉を先に囲う手順に注目してください。',
+  go:{tab:'joseki', line:'shiken', practice:true}, cta:'四間飛車を指してみる'},
+ {id:'c4', t:'四間飛車が捌く一局を観る', why:'振り飛車は待って、相手の攻めを受け止めてから反撃します。その呼吸を通しで見ます。',
+  do:'三十二手。二十七手目の受けの一手が要点です。',
+  go:{tab:'watch', id:'g-shiken'}, cta:'観戦する'},
+ {id:'c5', t:'囲わずに攻めるとどうなるか観る', why:'なぜ玉を囲うのか。十六手で結論が出る一局で体感します。',
+  do:'攻めた側が、なぜ苦しくなったのかを考えながら見てください。',
+  go:{tab:'watch', id:'g-nokakoi'}, cta:'観戦する'},
+ {id:'c6', t:'手筋ドリルを解く', why:'振り飛車は反撃の形を知っているかどうかで差がつきます。',
+  do:'ふんどしの桂、割り打ちの銀など四問。',
+  go:{tab:'drill', mode:'tesuji', i:0}, cta:'手筋を解く'},
+ {id:'c7', t:'六枚落ちで一局指す', why:'八枚落ちで勝てるようになったら一段上げます。相手に桂が戻ります。',
+  do:'美濃に囲ってから、飛車の前を開けて攻めてみてください。',
+  go:{tab:'play', preset:'p5', hcp:'h6', level:1}, cta:'六枚落ちで指す'}
+];
+/* ============================================================
+   UI
+   ============================================================ */
+const S=54, MX=26, MY=28, VBW=MX*2+9*S, VBH=MY+9*S+26;
+const $=(q,r)=>(r||document).querySelector(q);
+const $$=(q,r)=>Array.from((r||document).querySelectorAll(q));
+const el=(t,c,h)=>{const e=document.createElement(t); if(c)e.className=c; if(h!==undefined)e.innerHTML=h; return e;};
+
+class BoardView{
+  constructor(host,opts){
+    this.host=host; this.o=Object.assign({sides:[0],hands:true,onMove:null,showLast:true,flip:false},opts||{});
+    host.classList.add('board-host'); host.innerHTML='';
+    this.hg=el('div','handrow gote'); this.wrap=el('div','banwrap'); this.hs=el('div','handrow sente');
+    if(this.o.hands) host.appendChild(this.hg);
+    host.appendChild(this.wrap);
+    if(this.o.hands) host.appendChild(this.hs);
+    this.sel=null; this.targets=[]; this.lock=false;
+    this.wrap.addEventListener('click',e=>{
+      const t=e.target.closest('[data-i]'); if(!t) return; this.clickSq(+t.dataset.i);
+    });
+    for(const row of [this.hg,this.hs]) row.addEventListener('click',e=>{
+      const b=e.target.closest('[data-hand]'); if(!b) return;
+      this.clickHand(+b.dataset.side, b.dataset.hand);
+    });
+  }
+  setPos(p,keep){ this.pos=p; if(!keep){this.sel=null;this.targets=[];} this.render(); }
+  allowed(o){ return !this.lock && this.o.sides.indexOf(o)>=0; }
+  clearSel(){ this.sel=null; this.targets=[]; }
+  clickHand(side,t){
+    const p=this.pos; if(!p||p.turn!==side||!this.allowed(side)) return;
+    if(this.sel&&this.sel.kind==='hand'&&this.sel.t===t){ this.clearSel(); return this.render(); }
+    this.sel={kind:'hand',t,side}; this.targets=p.dropsOf(t); this.render();
+  }
+  clickSq(i){
+    const p=this.pos; if(!p) return;
+    if(this.sel){
+      const ms=this.targets.filter(m=>m.to===i);
+      if(ms.length===1){ return this.commit(ms[0]); }
+      if(ms.length>1){ return this.askPromote(ms,i); }
+    }
+    const pc=p.b[i];
+    if(pc && pc.o===p.turn && this.allowed(p.turn)){
+      this.sel={kind:'board',i}; this.targets=p.movesFrom(i);
+    }else{ this.clearSel(); }
+    this.render();
+  }
+  askPromote(ms,i){
+    const yes=ms.find(m=>m.promote), no=ms.find(m=>!m.promote);
+    const d=el('div','promo');
+    d.innerHTML='<button class="pri" data-y>成る</button><button data-n>不成</button>';
+    const r=this.svg.getBoundingClientRect(), k=r.width/VBW;
+    const x=(MX+colOf(i)*S+S/2)*k, y=(MY+rowOf(i)*S+S/2)*k;
+    d.style.left=Math.min(Math.max(x,70),r.width-70)+'px';
+    d.style.top=Math.min(y+30,r.height-52)+'px'; d.style.transform='translate(-50%,0)';
+    this.wrap.appendChild(d);
+    d.addEventListener('click',e=>{
+      if(e.target.dataset.y!==undefined){ d.remove(); this.commit(yes); }
+      else if(e.target.dataset.n!==undefined){ d.remove(); this.commit(no); }
+    });
+  }
+  commit(m){ this.clearSel(); if(this.o.onMove) this.o.onMove(m); }
+  komaSvg(pc,i,moved){
+    const cx=MX+colOf(i)*S+S/2, cy=MY+rowOf(i)*S+S/2;
+    const rot=pc.o===1?' rotate(180)':'';
+    return `<g class="koma${pc.p?' pro':''}${moved?' moved':''}" transform="translate(${cx},${cy})${rot}">`+
+      `<polygon points="0,-24 12,-16 17,23 -17,23 -12,-16"/>`+
+      `<text y="2.5">${pieceKanji(pc)}</text></g>`;
+  }
+  render(){
+    const p=this.pos; if(!p) return;
+    const lm=p.lastMove, showL=this.o.showLast!==false;
+    let s=`<svg class="ban" viewBox="0 0 ${VBW} ${VBH}" role="img" aria-label="将棋盤">`;
+    s+=`<defs><linearGradient id="wd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eccf98"/><stop offset="1" stop-color="#d9ac66"/></linearGradient></defs>`;
+    s+=`<rect x="${MX-4}" y="${MY-4}" width="${9*S+8}" height="${9*S+8}" fill="#8a6427"/>`;
+    s+=`<rect x="${MX}" y="${MY}" width="${9*S}" height="${9*S}" fill="url(#wd)"/>`;
+    for(let c=0;c<9;c++) s+=`<text class="coord" x="${MX+c*S+S/2}" y="${MY-13}">${9-c}</text>`;
+    for(let r=0;r<9;r++) s+=`<text class="coord" x="${MX+9*S+13}" y="${MY+r*S+S/2}">${RANKJ[r]}</text>`;
+    // ハイライト
+    const cell=(i,cls)=>`<rect class="${cls}" x="${MX+colOf(i)*S}" y="${MY+rowOf(i)*S}" width="${S}" height="${S}"/>`;
+    if(showL&&lm){ if(lm.from!==null&&lm.from!==undefined) s+=cell(lm.from,'sq-last-from'); s+=cell(lm.to,'sq-last-to'); }
+    if(this.sel&&this.sel.kind==='board') s+=cell(this.sel.i,'sq-sel');
+    // 枠線
+    for(let k=0;k<=9;k++){
+      const w=(k===0||k===9)?1.8:0.9;
+      s+=`<line x1="${MX+k*S}" y1="${MY}" x2="${MX+k*S}" y2="${MY+9*S}" stroke="#6d4f26" stroke-width="${w}"/>`;
+      s+=`<line x1="${MX}" y1="${MY+k*S}" x2="${MX+9*S}" y2="${MY+k*S}" stroke="#6d4f26" stroke-width="${w}"/>`;
+    }
+    for(const cx of [3,6]) for(const cy of [3,6])
+      s+=`<circle cx="${MX+cx*S}" cy="${MY+cy*S}" r="3.6" fill="#6d4f26"/>`;
+    // 駒
+    for(let i=0;i<81;i++){ const pc=p.b[i]; if(pc) s+=this.komaSvg(pc,i, showL&&lm&&lm.to===i); }
+    // 行き先
+    for(const m of this.targets){
+      const cx=MX+colOf(m.to)*S+S/2, cy=MY+rowOf(m.to)*S+S/2;
+      s+= p.b[m.to] ? `<circle class="dot cap" cx="${cx}" cy="${cy}" r="20"/>`
+                    : `<circle class="dot" cx="${cx}" cy="${cy}" r="8"/>`;
+    }
+    for(let i=0;i<81;i++) s+=`<rect class="cellhit" data-i="${i}" x="${MX+colOf(i)*S}" y="${MY+rowOf(i)*S}" width="${S}" height="${S}"/>`;
+    s+='</svg>';
+    this.wrap.innerHTML=s; this.svg=$('svg',this.wrap);
+    if(this.o.hands){ this.renderHand(this.hg,1); this.renderHand(this.hs,0); }
+  }
+  renderHand(row,side){
+    let h=`<span class="lbl">${side===0?'自分の持ち駒':'相手の持ち駒'}</span>`;
+    let any=false;
+    for(const t of PT_ORDER){
+      const n=this.pos.hand(side,t); if(!n) continue; any=true;
+      const on=this.sel&&this.sel.kind==='hand'&&this.sel.t===t&&this.sel.side===side;
+      h+=`<button class="handpiece" data-hand="${t}" data-side="${side}" aria-pressed="${on}"${this.pos.turn!==side?' disabled':''}>${KJ[t]}${n>1?`<span class="cnt">${n}</span>`:''}</button>`;
+    }
+    if(!any) h+='<span class="lbl" style="opacity:.5">なし</span>';
+    row.innerHTML=h;
+  }
+}
+
+/* ---------- 共通ヘルパ ---------- */
+function moveLabel(pos,m,prevTo){ return pos.moveText(m,prevTo); }
+function fromLabel(pos,m){ return m.drop?'持ち駒から':i2jp(m.from)+'から'; }
+function describeMove(pos,m){
+  const out=[]; const cap=pos.b[m.to];
+  if(cap) out.push(pieceName(cap)+'が取れます');
+  pos.doMove(m); const chk=pos.inCheck(pos.turn), mate=pos.isMate(pos.turn); pos.undoMove();
+  if(mate) out.push('詰みです'); else if(chk) out.push('王手です');
+  if(m.promote) out.push('成って強い駒になります');
+  if(m.drop&&!out.length) out.push('持ち駒を打って形を作る手です');
+  if(!out.length) out.push('駒組みを進める手です');
+  return out.join('。');
+}
+
+/* ============================================================
+   まなぶ
+   ============================================================ */
+const TOUR=[
+ {t:'P',label:'歩',text:'前に一マス。とにかく数が多く、突き捨て・垂れ歩・と金づくりと、あらゆる作戦の材料になります。'},
+ {t:'L',label:'香',text:'前にどこまでも。後ろに戻れないので、打つときも進めるときも「行ったきり」だと覚悟して使います。'},
+ {t:'N',label:'桂',text:'前二つ先の左右へ。唯一、間の駒を飛び越えられます。後ろへ戻れず、跳ねすぎると取られます（桂の高跳び歩の餌食）。'},
+ {t:'S',label:'銀',text:'前三方と斜め後ろ。斜めに強く、前に出ても引き返せるので攻めに向きます。真横と真後ろには行けません。'},
+ {t:'G',label:'金',text:'前三方と横、そして真後ろ。斜め後ろだけ行けません。動きが渋く、守りの中心になります。'},
+ {t:'B',label:'角',text:'斜めにどこまでも。盤の色（同じ色のマス）しか行けないので、行けない側は他の駒で守ります。'},
+ {t:'R',label:'飛',text:'縦横にどこまでも。単騎でもっとも広く利く、最強の駒です。'},
+ {t:'K',label:'玉',text:'まわり八方に一マス。取られたら負けなので、序盤のうちに安全地帯へ運びます。'},
+ {t:'R',p:true,label:'竜',text:'飛車が成った姿。縦横に走り、さらに斜め一マス。相手陣に居座らせると、ほぼ勝ちです。'},
+ {t:'B',p:true,label:'馬',text:'角が成った姿。斜めに走り、さらに縦横一マス。守りに使っても強く、「馬の守りは金銀三枚」といわれます。'}
+];
+/* ============================================================
+   図版（本文中の挿絵）
+   ============================================================ */
+const MV={
+  P :{s:[[0,-1]]},
+  L :{r:[[0,-1]]},
+  N :{s:[[-1,-2],[1,-2]]},
+  S :{s:[[0,-1],[-1,-1],[1,-1],[-1,1],[1,1]]},
+  G :{s:[[0,-1],[-1,-1],[1,-1],[-1,0],[1,0],[0,1]]},
+  B :{r:[[-1,-1],[1,-1],[-1,1],[1,1]]},
+  R :{r:[[0,-1],[0,1],[-1,0],[1,0]]},
+  K :{s:[[0,-1],[-1,-1],[1,-1],[-1,0],[1,0],[0,1],[-1,1],[1,1]]},
+  RP:{r:[[0,-1],[0,1],[-1,0],[1,0]],s:[[-1,-1],[1,-1],[-1,1],[1,1]]},
+  BP:{r:[[-1,-1],[1,-1],[-1,1],[1,1]],s:[[0,-1],[0,1],[-1,0],[1,0]]}
+};
+function moveChart(key,kanji,pro){
+  const C=24,N=5,W=C*N,cx=2,cy=2, m=MV[key]||{};
+  const px=c=>c*C+C/2;
+  let g=`<svg viewBox="0 0 ${W} ${W}" role="img" aria-label="${kanji}の動き">`;
+  for(let i=1;i<N;i++){
+    g+=`<line class="mv-grid" x1="${i*C}" y1="0" x2="${i*C}" y2="${W}"/>`;
+    g+=`<line class="mv-grid" x1="0" y1="${i*C}" x2="${W}" y2="${i*C}"/>`;
+  }
+  (m.r||[]).forEach(d=>{
+    const ex=px(cx)+d[0]*C*2.4, ey=px(cy)+d[1]*C*2.4;
+    g+=`<line class="mv-line" x1="${px(cx)+d[0]*11}" y1="${px(cy)+d[1]*11}" x2="${ex}" y2="${ey}"/>`;
+    g+=`<circle class="mv-dot" cx="${px(cx)+d[0]*C}" cy="${px(cy)+d[1]*C}" r="3.6"/>`;
+  });
+  (m.s||[]).forEach(d=>{ g+=`<circle class="mv-dot" cx="${px(cx+d[0])}" cy="${px(cy+d[1])}" r="4.6"/>`; });
+  g+=`<g transform="translate(${px(cx)},${px(cy)})"><polygon points="0,-11 5.5,-7.5 8,10.5 -8,10.5 -5.5,-7.5"
+      fill="#f3dcaa" stroke="#a97f3d" stroke-width="1"/>
+      <text y="1.5" text-anchor="middle" dominant-baseline="central" 
+      font-size="11" fill="${pro?'#d24a30':'#2b1c08'}">${kanji}</text></g>`;
+  return g+'</svg>';
+}
+function figMoves(){
+  let h='<p class="cap">駒の動き　●＝行けるマス　線＝その方向へどこまでも</p><div class="mvgrid">';
+  TOUR.forEach(t=>{
+    const key=t.p?(t.t==='R'?'RP':'BP'):t.t;
+    h+=`<div class="mvcell">${moveChart(key,t.label,t.p)}<p class="nm">${t.label}</p><p class="tx">${t.text.split('。')[0]}。</p></div>`;
+  });
+  return h+'</div>';
+}
+function miniBan(opt){
+  const C=26,MXs=4,MYs=16,W=MXs*2+9*C,H=MYs+9*C+16;
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opt.alt||'図'}">`;
+  g+=`<rect x="${MXs}" y="${MYs}" width="${9*C}" height="${9*C}" fill="#e7c68b" stroke="#6d4f26"/>`;
+  (opt.tint||[]).forEach(t=>{
+    g+=`<rect x="${MXs+t.c*C}" y="${MYs+t.r*C}" width="${t.w*C}" height="${t.h*C}" fill="${t.f||'rgba(210,74,48,.22)'}"/>`;
+  });
+  for(let i=1;i<9;i++){
+    g+=`<line x1="${MXs+i*C}" y1="${MYs}" x2="${MXs+i*C}" y2="${MYs+9*C}" stroke="#6d4f26" stroke-width=".7"/>`;
+    g+=`<line x1="${MXs}" y1="${MYs+i*C}" x2="${MXs+9*C}" y2="${MYs+i*C}" stroke="#6d4f26" stroke-width=".7"/>`;
+  }
+  if(opt.coord){
+    for(let c=0;c<9;c++) g+=`<text x="${MXs+c*C+C/2}" y="${MYs-7}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#c9b995">${9-c}</text>`;
+    for(let r=0;r<9;r++) g+=`<text x="${MXs+9*C+8}" y="${MYs+r*C+C/2}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#c9b995">${RANKJ[r]}</text>`;
+  }
+  (opt.marks||[]).forEach(m=>{
+    g+=`<rect x="${MXs+m.c*C}" y="${MYs+m.r*C}" width="${C}" height="${C}" fill="rgba(210,74,48,.28)" stroke="#d24a30" stroke-width="1.6"/>`;
+  });
+  (opt.pieces||[]).forEach(pc=>{
+    const x=MXs+pc.c*C+C/2, y=MYs+pc.r*C+C/2, rot=pc.g?' rotate(180)':'';
+    g+=`<g transform="translate(${x},${y})${rot}"><polygon points="0,-11.5 5.7,-7.8 8.2,11 -8.2,11 -5.7,-7.8"
+      fill="#f3dcaa" stroke="#a97f3d" stroke-width="1"/>
+      <text y="1.5" text-anchor="middle" dominant-baseline="central" 
+      font-size="11.5" fill="${pc.p?'#d24a30':'#2b1c08'}">${pc.t}</text></g>`;
+  });
+  (opt.labels||[]).forEach(l=>{
+    g+=`<text x="${MXs+l.c*C+C/2}" y="${MYs+l.r*C+C/2}" text-anchor="middle" dominant-baseline="central"
+       font-size="${l.size||13}" fill="${l.f||'#d24a30'}">${l.t}</text>`;
+  });
+  return g+'</svg>';
+}
+const FIGS={
+  moves: figMoves,
+  zone: ()=>`<p class="cap">敵陣＝相手側から三段目まで</p>
+    <div class="figrow"><div class="figboard">${miniBan({coord:true,alt:'敵陣',
+      tint:[{r:0,c:0,w:9,h:3}],
+      pieces:[{r:8,c:4,t:'玉'},{r:6,c:2,t:'歩'},{r:0,c:6,g:true,t:'玉'}],
+      labels:[{r:1,c:4,t:'敵陣（先手から見て）',size:12}]})}</div>
+    <div><p class="t">成れる条件</p><p class="d">この赤い三段に<b>入る・出る・その中で動く</b>とき、玉と金いがいは成るか成らないかを選べます。歩・香が一段目、桂が一〜二段目に行く場合だけは、動けなくなるので必ず成ります。</p></div></div>`,
+  promote: ()=>{
+    const pr=[['歩','と'],['香','杏'],['桂','圭'],['銀','全'],['飛','竜'],['角','馬']];
+    let h='<p class="cap">成るとこう変わる</p><div class="pairs">';
+    pr.forEach(x=>{ h+=`<span class="pr"><k>${x[0]}</k>→<k class="p">${x[1]}</k></span>`; });
+    h+='</div><p class="d" style="color:var(--muted);font-size:12.5px;margin-top:10px">と・杏・圭・全 は、四つとも<k>金</k>とまったく同じ動きになります。竜は飛＋斜め一マス、馬は角＋縦横一マス。</p>';
+    return h;
+  },
+  ouji: ()=>`<p class="cap">王手をほどく三つの方法</p><div class="figrow">
+    <div><p class="t">逃げる</p><div class="figboard">${miniBan({alt:'逃げる',
+      pieces:[{r:8,c:4,t:'玉'},{r:4,c:4,g:true,t:'飛'}],marks:[{r:8,c:3},{r:8,c:5}]})}</div>
+      <p class="d">利きの外へ玉を動かす。いちばん基本の受けです。</p></div>
+    <div><p class="t">取る</p><div class="figboard">${miniBan({alt:'取る',
+      pieces:[{r:8,c:4,t:'玉'},{r:7,c:4,g:true,t:'飛'},{r:8,c:3,t:'金'}],marks:[{r:7,c:4}]})}</div>
+      <p class="d">王手をかけてきた駒そのものを取ってしまう。持ち駒も増えて一石二鳥。</p></div>
+    <div><p class="t">合駒で遮る</p><div class="figboard">${miniBan({alt:'合駒',
+      pieces:[{r:8,c:4,t:'玉'},{r:4,c:4,g:true,t:'飛'}],marks:[{r:6,c:4}],labels:[{r:6,c:4,t:'歩',f:'#2b1c08'}]})}</div>
+      <p class="d">あいだに駒を置いて線を切る。飛・角・香のような走る駒にだけ有効です。</p></div></div>`,
+  suji: ()=>`<p class="cap">筋は右から１〜９、段は上から一〜九</p>
+    <div class="figrow"><div class="figboard">${miniBan({coord:true,alt:'筋と段',
+      tint:[{r:0,c:2,w:1,h:9,f:'rgba(201,164,90,.22)'},{r:5,c:0,w:9,h:1,f:'rgba(201,164,90,.22)'}],
+      marks:[{r:5,c:2}]})}</div>
+    <div><p class="t">交わったところが ７六</p><p class="d">縦の帯が<b>７筋</b>（右から七番目）、横の帯が<b>六段目</b>（上から六番目）。この交点が<b>７六</b>で、そこへ歩を動かした手が <b>▲７六歩</b>（ななろくふ）です。数字が先、漢数字が後——この順番だけ覚えれば迷いません。</p></div></div>`,
+  kifuparts: ()=>`<p class="cap">▲７六歩 を分解する</p><div class="kifubox">
+    <div class="pt"><div class="c">▲</div><div class="l">先手が指した手<br>（後手は△）</div></div>
+    <div class="pt"><div class="c">７</div><div class="l">筋＝右から<br>七番目の縦列</div></div>
+    <div class="pt"><div class="c">六</div><div class="l">段＝上から<br>六番目の横列</div></div>
+    <div class="pt"><div class="c">歩</div><div class="l">動かした駒<br>の名前</div></div></div>`,
+  drop: ()=>`<p class="cap">打つときだけの三つの禁じ手</p><div class="figrow">
+    <div><p class="t">二歩</p><div class="figboard">${miniBan({alt:'二歩',
+      pieces:[{r:6,c:2,t:'歩'}],marks:[{r:4,c:2}],labels:[{r:4,c:2,t:'歩',f:'#2b1c08'}]})}</div>
+      <p class="d">同じ縦の列に自分の歩が二枚。うっかり指すと反則負けになる、いちばん多い反則です。</p></div>
+    <div><p class="t">行き所のない駒</p><div class="figboard">${miniBan({alt:'行き所のない駒',
+      marks:[{r:0,c:4},{r:1,c:2}],labels:[{r:0,c:4,t:'歩',f:'#2b1c08'},{r:1,c:2,t:'桂',f:'#2b1c08'}]})}</div>
+      <p class="d">一段目の歩と香、一〜二段目の桂は、打った瞬間に二度と動けません。だから打てません。</p></div>
+    <div><p class="t">打ち歩詰め</p><div class="figboard">${miniBan({alt:'打ち歩詰め',
+      pieces:[{r:0,c:4,g:true,t:'玉'},{r:2,c:3,t:'金'},{r:2,c:5,t:'金'}],
+      marks:[{r:1,c:4}],labels:[{r:1,c:4,t:'歩',f:'#2b1c08'}]})}</div>
+      <p class="d">歩を<b>打って</b>詰ますのは禁止。同じ形でも、歩を<b>突いて</b>詰ますのは合法です。</p></div></div>`,
+  value: ()=>{
+    const v=[['歩','１'],['香','３'],['桂','４'],['銀','５'],['金','６'],['角','８'],['飛','１０'],['と','６']];
+    let h='<p class="cap">だいたいの駒の価値（歩を１として）</p><div class="pairs">';
+    v.forEach(x=>{ h+=`<span class="pr"><k${x[0]==='と'?' class="p"':''}>${x[0]}</k>${x[1]}</span>`; });
+    return h+'</div><p class="d" style="color:var(--muted);font-size:12.5px;margin-top:10px">金と銀を交換すると銀の側が少し損、銀と桂の交換は桂の側が少し損。歩を一枚渡して飛車を成りこめるなら、それは大きな得です。数字は流派によって多少違う目安で、局面によっても上下します。</p>';
+  }
+};
+function renderFigs(root){
+  $$('[data-fig]',root).forEach(el2=>{
+    const f=FIGS[el2.dataset.fig];
+    if(f) el2.innerHTML=f();
+  });
+}
+
+const Learn={
+  idx:0, tour:0, castle:'mino',
+  mount(host){
+    host.innerHTML=`<div class="cols narrow">
+      <div class="card"><h2 class="sec">目次</h2><p class="lead">上から順に</p><div class="menu" id="lmenu"></div></div>
+      <div id="ldetail"></div></div>`;
+    const menu=$('#lmenu',host);
+    LESSONS.forEach((l,i)=>{
+      const b=el('button','',`<span>${i+1}　${l.title}</span><span class="sub">${l.lead}</span>`);
+      b.onclick=()=>{this.idx=i;this.detail();};
+      menu.appendChild(b);
+    });
+    this.host=host; this.detail();
+  },
+  detail(){
+    $$('#lmenu button').forEach((b,i)=>b.setAttribute('aria-current',i===this.idx));
+    const l=LESSONS[this.idx], d=$('#ldetail');
+    d.innerHTML=`<div class="card"><h2 class="sec">${l.title}</h2><p class="lead">${l.lead}</p>
+      <div class="prose">${l.html}</div></div>
+      <div class="card" id="lscene"></div>`;
+    renderFigs(d);
+    this.scene(l, $('#lscene'));
+  },
+  scene(l,box){
+    const sc=l.scene;
+    if(sc.kind==='view'){
+      box.innerHTML='<div id="lb"></div><p class="caption">'+sc.caption+'</p>';
+      new BoardView($('#lb',box),{sides:[],hands:true}).setPos(Pos.start({types:['R','B','G','S','N','L','P']}));
+    }
+    if(sc.kind==='free'||sc.kind==='mate'){
+      box.innerHTML='<div id="lb"></div><p class="caption">'+(sc.caption||'')+'</p><div class="row" style="margin-top:12px"><button class="btn" id="lreset">最初の形に戻す</button>'+
+        (sc.hint?'<button class="btn" id="lhint">ヒント</button>':'')+'</div><div id="lmsg"></div>';
+      let pos;
+      const bv=new BoardView($('#lb',box),{sides:[0,1]});
+      bv.o.onMove=(m)=>{
+        pos.doMove(m); bv.setPos(pos);
+        if(sc.kind==='mate'){
+          if(pos.isMate(1)) celebrate($('#lb',box), '詰み', '正解');
+          $('#lmsg',box).innerHTML = pos.isMate(1)
+            ? '<div class="okbox big">詰みです。正解！　玉はどこにも逃げられず、打った金も取れません。</div>'
+            : '<div class="ngbox">まだ詰んでいません。玉に逃げ道が残っているか、打った駒が取られてしまいます。「最初の形に戻す」でやり直せます。</div>';
+        }
+      };
+      const reset=()=>{ pos=Pos.from(sc.spec); bv.setPos(pos); $('#lmsg',box).innerHTML=''; };
+      $('#lreset',box).onclick=reset;
+      if(sc.hint) $('#lhint',box).onclick=()=>{$('#lmsg',box).innerHTML='<div class="hintbox">'+sc.hint+'</div>';};
+      reset();
+    }
+    if(sc.kind==='pieces'){
+      box.innerHTML='<h2 class="sec">駒を選んで動かす</h2><p class="lead">選んだ駒の行けるマスに印がつきます</p><div class="chips" id="tchips"></div><div id="lb"></div><p class="caption" id="tdesc"></p><div class="row" style="margin-top:10px"><button class="btn" id="treset">配置に戻す</button></div>';
+      const chips=$('#tchips',box);
+      TOUR.forEach((t,i)=>{ const b=el('button','chip',t.label); b.onclick=()=>{this.tour=i;draw();}; chips.appendChild(b); });
+      const bv=new BoardView($('#lb',box),{sides:[0,1],hands:false});
+      const draw=()=>{
+        $$('.chip',chips).forEach((b,i)=>b.setAttribute('aria-pressed',i===this.tour));
+        const t=TOUR[this.tour];
+        const pieces=[{sq:'55',o:0,t:t.t,p:!!t.p}];
+        for(const sq of ['53','43','63','33','73','35','75','37','77','57']) pieces.push({sq,o:1,t:'P'});
+        const pos=Pos.from({pieces,hands:[{},{}],turn:0});
+        bv.setPos(pos);
+        bv.o.onMove=m=>{pos.doMove(m);bv.setPos(pos);};
+        bv.clickSq(sq2i('55'));
+        $('#tdesc',box).innerHTML='<b>'+t.label+'</b>　'+t.text;
+      };
+      $('#treset',box).onclick=draw; draw();
+    }
+    if(sc.kind==='coords'){
+      box.innerHTML=`<h2 class="sec">マスの名前を確かめる</h2>
+        <p class="lead">筋は右から１〜９、段は上から一〜九</p>
+        <div class="chips" id="cmode">
+          <button class="chip" data-m="look">押して確かめる</button>
+          <button class="chip" data-m="quiz">場所あてクイズ</button></div>
+        <div id="lb"></div>
+        <p class="caption" id="cread">盤のどこでもいいので押してみてください。</p>
+        <div id="cmsg"></div>`;
+      const bv=new BoardView($('#lb',box),{sides:[],hands:false});
+      bv.setPos(Pos.from({pieces:[],hands:[{},{}],turn:0}));
+      const SK=['いち','に','さん','よん','ご','ろく','なな','はち','きゅう'];
+      const DK=['いち','に','さん','よん','ご','ろく','なな','はち','く'];
+      const ZEN='１２３４５６７８９';
+      const nameOf=i=>{const f=9-colOf(i),r=rowOf(i); return {txt:ZEN[f-1]+RANKJ[r], kana:SK[f-1]+DK[r], f, r:r+1};};
+      let mode='look', q=null, n=0, ok=0;
+      const mark=i=>{ bv.targets=(i==null?[]:[{to:i}]); bv.render(); };
+      const ask=()=>{
+        q=Math.floor(Math.random()*81); const nm=nameOf(q); n++;
+        $('#cread',box).innerHTML=`第${n}問　<b style="font-family:var(--mincho);font-size:20px;color:var(--shu)">${nm.txt}</b>（${nm.kana}）はどこ？　盤を押してください。`;
+        mark(null);
+      };
+      bv.clickSq=(i)=>{
+        const nm=nameOf(i);
+        if(mode==='look'){
+          mark(i);
+          $('#cread',box).innerHTML=`ここは <b style="font-family:var(--mincho);font-size:20px;color:var(--shu)">${nm.txt}</b>（${nm.kana}）。右から${nm.f}番目の筋、上から${nm.r}番目の段です。`;
+          $('#cmsg',box).innerHTML='';
+        }else{
+          mark(i);
+          if(i===q){ ok++;
+            $('#cmsg',box).innerHTML=`<div class="okbox big">正解。${nameOf(q).txt} です。（${n}問中 ${ok}問正解）</div>`;
+            if(ok%5===0) celebrate($('#lb',box), ok+'問連続', 'その調子');
+            setTimeout(ask,900);
+          }else{
+            $('#cmsg',box).innerHTML=`<div class="ngbox">そこは ${nm.txt} です。${nameOf(q).txt} は、右から${9-colOf(q)}番目の筋、上から${rowOf(q)+1}番目の段。もう一度どうぞ。</div>`;
+          }
+        }
+      };
+      $$('#cmode .chip',box).forEach(b=>{ b.onclick=()=>{
+        mode=b.dataset.m;
+        $$('#cmode .chip',box).forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===mode));
+        $('#cmsg',box).innerHTML=''; n=0; ok=0;
+        if(mode==='quiz'){ ask(); }
+        else{ mark(null); $('#cread',box).textContent='盤のどこでもいいので押してみてください。'; }
+      };});
+      $$('#cmode .chip',box)[0].setAttribute('aria-pressed','true');
+    }
+    if(sc.kind==='castle'){
+      box.innerHTML='<h2 class="sec">囲いを見る</h2><p class="lead">まずは形だけ覚える</p><div class="chips" id="cchips"></div><div id="lb"></div><div id="cdesc" class="prose" style="margin-top:14px"></div>';
+      const chips=$('#cchips',box), bv=new BoardView($('#lb',box),{sides:[],hands:false});
+      const keys=Object.keys(CASTLES);
+      keys.forEach(k=>{const b=el('button','chip',CASTLES[k].name); b.onclick=()=>{this.castle=k;draw();}; chips.appendChild(b);});
+      const draw=()=>{
+        $$('.chip',chips).forEach((b,i)=>b.setAttribute('aria-pressed',keys[i]===this.castle));
+        const c=CASTLES[this.castle];
+        bv.setPos(Pos.from({pieces:c.pieces,hands:[{},{}],turn:0}));
+        $('#cdesc',box).innerHTML=`<p><b>${c.name}</b>（${c.side}）</p><p>${c.good}</p><p style="color:var(--muted)">弱点　${c.bad}</p>`;
+      };
+      draw();
+    }
+  }
+};
+
+/* ============================================================
+   定跡
+   ============================================================ */
+const Joseki={
+  sel:{kind:'line',id:'kihon'}, ply:0, practice:false,
+  mount(host){
+    host.innerHTML=`<div class="cols narrow">
+      <div class="card"><h2 class="sec">定跡の棚</h2><p class="lead">戦型・囲い・手筋</p><div class="menu" id="jmenu"></div></div>
+      <div id="jdetail"></div></div>`;
+    const menu=$('#jmenu',host);
+    const cats=[];
+    JOSEKI.forEach(j=>{ if(cats.indexOf(j.cat)<0) cats.push(j.cat); });
+    cats.forEach(c=>{
+      menu.appendChild(el('div','grp',c));
+      JOSEKI.filter(j=>j.cat===c).forEach(j=>{
+        const b=el('button','',`<span>${j.name}</span><span class="sub">${j.tag}</span>`);
+        b.dataset.k='line'; b.dataset.id=j.id;
+        b.onclick=()=>{this.sel={kind:'line',id:j.id};this.ply=0;this.practice=false;this.detail();};
+        menu.appendChild(b);
+      });
+    });
+    menu.appendChild(el('div','grp','守りの形（囲い）'));
+    Object.keys(CASTLES).forEach(k=>{
+      const c=CASTLES[k];
+      const b=el('button','',`<span>${c.name}</span><span class="sub">${c.side}</span>`);
+      b.dataset.k='castle'; b.dataset.id=k;
+      b.onclick=()=>{this.sel={kind:'castle',id:k};this.detail();};
+      menu.appendChild(b);
+    });
+    menu.appendChild(el('div','grp','覚えておく手筋'));
+    const b=el('button','',`<span>手筋の名前と意味</span><span class="sub">継ぎ歩・十字飛車・底歩ほか</span>`);
+    b.dataset.k='cards'; b.onclick=()=>{this.sel={kind:'cards'};this.detail();};
+    menu.appendChild(b);
+    this.detail();
+  },
+  mark(){
+    $$('#jmenu button').forEach(b=>{
+      const on=(b.dataset.k===this.sel.kind)&&(this.sel.id===undefined||b.dataset.id===this.sel.id);
+      b.setAttribute('aria-current',on);
+    });
+  },
+  detail(){
+    this.mark();
+    const d=$('#jdetail');
+    if(this.sel.kind==='castle'){
+      const c=CASTLES[this.sel.id];
+      d.innerHTML=`<div class="card"><h2 class="sec">${c.name}</h2><p class="lead">${c.side}</p>
+        <div id="jb"></div>
+        <table class="deftbl"><tr><th>強いところ</th><td>${c.good}</td></tr>
+        <tr><th>弱いところ</th><td>${c.bad}</td></tr>
+        <tr><th>覚え方</th><td>玉の周りの金銀の位置だけ覚えれば十分です。手順は多少前後しても、この形になれば囲えています。</td></tr></table></div>`;
+      new BoardView($('#jb'),{sides:[],hands:false}).setPos(Pos.from({pieces:c.pieces,hands:[{},{}],turn:0}));
+      return;
+    }
+    if(this.sel.kind==='cards'){
+      d.innerHTML=`<div class="card"><h2 class="sec">覚えておく手筋</h2><p class="lead">名前を知ると、盤の上で見つけられるようになります</p>
+        <table class="deftbl">${TESUJI_CARDS.map(t=>`<tr><th>${t.name}</th><td>${t.text}</td></tr>`).join('')}</table>
+        <p class="caption">「ふんどしの桂」「割り打ちの銀」「田楽刺し」「垂れ歩」は、ドリルで実際に打って確かめられます。</p></div>`;
+      return;
+    }
+    const j=JOSEKI.find(x=>x.id===this.sel.id);
+    d.innerHTML=`<div class="card"><h2 class="sec">${j.name}</h2><p class="lead">${j.cat}　—　${j.tag}</p>
+      <div class="prose"><p>${j.summary}</p></div>
+      <table class="deftbl">
+        <tr><th>狙い</th><td>${j.aim}</td></tr>
+        <tr><th>要点</th><td>${j.point}</td></tr>
+        <tr><th>弱点</th><td>${j.weak}</td></tr></table></div>
+      <div class="card">
+        <div class="row"><button class="btn" id="jprac">自分で指してみる</button>
+          <span class="toggle"><input type="checkbox" id="jlast" checked><label for="jlast">直前の手を強調</label></span></div>
+        <div id="jb"></div>
+        <div class="prog"><i id="jprog"></i></div>
+        <div class="stepbar">
+          <button class="btn" id="jfirst">最初へ</button>
+          <button class="btn" id="jprev">◀ 一手戻す</button>
+          <button class="btn pri" id="jnext">一手進める ▶</button>
+          <button class="btn" id="jlast2">最後まで</button>
+          <span class="caption" id="jcount"></span>
+        </div>
+        <div class="movenote" id="jnote"></div>
+        <div id="jmsg" aria-live="polite"></div>
+      </div>`;
+    this.pos=Pos.start({types:['R','B','G','S','N','L','P']});
+    this.bv=new BoardView($('#jb'),{sides:[],hands:true});
+    this.bv.setPos(this.pos);
+    this.ply=0; this.practice=false;
+    const wantPrac=this.pendPractice; this.pendPractice=false;
+    $('#jnext').onclick=()=>this.step(1);
+    $('#jprev').onclick=()=>this.step(-1);
+    $('#jfirst').onclick=()=>this.goto(0);
+    $('#jlast2').onclick=()=>this.goto(j.moves.length);
+    $('#jlast').onchange=e=>{this.bv.o.showLast=e.target.checked;this.bv.render();};
+    $('#jprac').onclick=()=>this.togglePractice();
+    if(wantPrac) this.togglePractice();
+    this.note();
+  },
+  goto(n){
+    const j=JOSEKI.find(x=>x.id===this.sel.id);
+    this.pos=Pos.start({types:['R','B','G','S','N','L','P']});
+    for(let k=0;k<n;k++) this.pos.doMove(parseMove(this.pos,j.moves[k]));
+    this.ply=n; this.bv.setPos(this.pos); this.note();
+  },
+  step(d){
+    const j=JOSEKI.find(x=>x.id===this.sel.id);
+    if(d>0){ if(this.ply>=j.moves.length) return; this.pos.doMove(parseMove(this.pos,j.moves[this.ply])); this.ply++; }
+    else { if(this.ply<=0) return; this.pos.undoMove(); this.ply--; }
+    this.bv.setPos(this.pos); this.note();
+  },
+  note(){
+    const j=JOSEKI.find(x=>x.id===this.sel.id);
+    const n=$('#jnote'); if(!n) return;
+    $('#jprog').style.width=(this.ply/j.moves.length*100)+'%';
+    $('#jcount').textContent=this.ply+' / '+j.moves.length+'手';
+    if(this.ply===0){ n.innerHTML='<span class="mv">開始</span>「一手進める」を押していくと、手順と解説が進みます。'; return; }
+    const t=j.notes[this.ply-1];
+    n.innerHTML='<span class="mv">'+(this.ply)+'手目</span>'+t;
+  },
+  togglePractice(){
+    const j=JOSEKI.find(x=>x.id===this.sel.id);
+    this.practice=!this.practice;
+    $('#jprac').textContent=this.practice?'解説モードに戻る':'自分で指してみる';
+    $('#jmsg').innerHTML=this.practice?'<div class="hintbox">先手（あなた）の手番です。定跡どおりの手を指してください。正解すると相手が応じます。分からなければ下の解説を見てください。</div>':'';
+    if(this.practice){
+      this.bv.o.sides=[0];
+      this.bv.o.onMove=m=>{
+        const want=parseMove(this.pos,j.moves[this.ply]);
+        if(sameMove(want,m)){
+          this.pos.doMove(m); this.ply++; this.bv.setPos(this.pos); this.note();
+          $('#jmsg').innerHTML='<div class="okbox">正解です。'+j.notes[this.ply-1]+'</div>';
+          if(this.ply<j.moves.length){
+            setTimeout(()=>{ this.pos.doMove(parseMove(this.pos,j.moves[this.ply])); this.ply++; this.bv.setPos(this.pos); this.note(); },500);
+          } else { $('#jmsg').innerHTML='<div class="okbox big">定跡の手順を最後まで指し切りました。</div>';
+            celebrate($('#jb'), '完走', j.name+' 指し切り'); }
+        }else{
+          const wanted=this.pos.moveText(want);
+          $('#jmsg').innerHTML='<div class="ngbox">定跡はその手ではありません。'+
+            (want.to===m.to?'行き先は合っています。成るかどうか、どの駒で行くかを見直してみてください。':'')+
+            '<br><span style="color:var(--muted)">正解を見る場合は「解説モードに戻る」→「一手進める」。</span></div>';
+          this.bv.setPos(this.pos);
+        }
+      };
+    } else { this.bv.o.sides=[]; this.bv.o.onMove=null; }
+    this.bv.render();
+  }
+};
+
+/* ============================================================
+   対局
+   ============================================================ */
+const Play={
+  preset:'p5', hcp:'h0', level:2, showLast:true, over:false,
+  mount(host){
+    host.innerHTML=`<div class="cols">
+      <div><div class="card" id="pboardcard"><div id="pb"></div></div></div>
+      <div class="side">
+        <div class="card">
+          <h2 class="sec">対局設定</h2><p class="lead">駒を減らして、少しずつ増やす</p>
+          <div class="row">
+            <label class="fld">練習セット<select id="ppreset"></select></label>
+            <label class="fld">駒落ち（相手の駒を減らす）<select id="phcp"></select></label>
+            <label class="fld">相手の強さ<select id="plevel">
+              <option value="1">やさしい</option><option value="2" selected>ふつう</option><option value="3">つよい</option></select></label>
+          </div>
+          <p class="caption" id="pdesc"></p>
+          <div class="row" style="margin-top:14px">
+            <button class="btn pri" id="pnew">この設定で始める</button>
+            <button class="btn" id="pundo">待った</button>
+            <button class="btn" id="phint">ヒント</button>
+            <button class="btn" id="presign">投了</button>
+          </div>
+          <div class="row"><span class="toggle"><input type="checkbox" id="plast" checked><label for="plast">直前の手を強調して表示する</label></span></div>
+        </div>
+        <div class="card">
+          <p class="status" id="pstatus"></p>
+          <p class="lastmove" id="plast2"></p>
+          <div id="pmsg"></div>
+          <div class="hr"></div>
+          <h2 class="sec" style="font-size:16px">棋譜</h2>
+          <div class="kifu" id="pkifu"></div>
+        </div>
+      </div></div>`;
+    const ps=$('#ppreset'), hs=$('#phcp');
+    PRESETS.forEach(p=>ps.appendChild(new Option(p.name,p.id)));
+    HANDICAPS.forEach(h=>hs.appendChild(new Option(h.name,h.id)));
+    ps.value=this.preset; hs.value=this.hcp; $('#plevel').value=this.level;
+    ps.onchange=()=>{this.preset=ps.value;this.desc();};
+    hs.onchange=()=>{this.hcp=hs.value;};
+    $('#plevel').onchange=e=>{this.level=+e.target.value;};
+    $('#pnew').onclick=()=>this.start();
+    $('#pundo').onclick=()=>this.undo();
+    $('#phint').onclick=()=>this.hint();
+    $('#presign').onclick=()=>this.resign();
+    $('#plast').onchange=e=>{this.showLast=e.target.checked;this.bv.o.showLast=this.showLast;this.bv.render();};
+    this.bv=new BoardView($('#pb'),{sides:[0],onMove:m=>this.userMove(m)});
+    this.desc(); this.start();
+  },
+  desc(){ $('#pdesc').textContent=PRESETS.find(p=>p.id===this.preset).desc; },
+  start(){
+    const pr=PRESETS.find(p=>p.id===this.preset), hc=HANDICAPS.find(h=>h.id===this.hcp);
+    this.pos=Pos.start({types:pr.types,handicap:hc.drop});
+    this.kifu=[]; this.prevTo=null; this.over=false;
+    this.bv.lock=false; this.bv.o.showLast=this.showLast; this.bv.setPos(this.pos);
+    $('#pmsg').innerHTML=''; this.update();
+  },
+  update(){
+    const p=this.pos;
+    let st='';
+    if(this.over) st=this.overText;
+    else if(p.isMate(p.turn)) { this.over=true; this.overText=(p.turn===0?'詰み。あなたの負けです。':'詰み。あなたの勝ちです！'); st=this.overText; this.bv.lock=true;
+      if(p.turn===1) celebrate($('#pb'),'勝ち','詰みました'); }
+    else if(p.isStuck(p.turn)){ this.over=true; this.overText='指す手がありません。'+(p.turn===0?'負けです。':'あなたの勝ちです！'); st=this.overText; this.bv.lock=true;
+      if(p.turn===1) celebrate($('#pb'),'勝ち','相手は指す手がありません'); }
+    else st=(p.turn===0?'あなたの手番':'相手の手番')+(p.inCheck(p.turn)?' <span class="warn">王手</span>':'');
+    $('#pstatus').innerHTML=st;
+    const lm=p.lastMove;
+    $('#plast2').innerHTML=lm? '直前の手　<b>'+this.kifu[this.kifu.length-1].t+'</b>（'+this.kifu[this.kifu.length-1].f+'）盤の朱色の枠が動いた駒です。' : '直前の手　まだありません。';
+    $('#pkifu').innerHTML=this.kifu.map((k,i)=>`<div${i===this.kifu.length-1?' class="cur"':''}><span class="n">${i+1}</span><span>${k.t}</span></div>`).join('');
+    const kf=$('#pkifu'); kf.scrollTop=kf.scrollHeight;
+  },
+  push(m){
+    const t=this.pos.moveText(m,this.prevTo), f=fromLabel(this.pos,m);
+    this.kifu.push({t,f}); this.prevTo=m.to;
+  },
+  userMove(m){
+    if(this.over) return;
+    this.push(m); this.pos.doMove(m); this.bv.setPos(this.pos); $('#pmsg').innerHTML=''; this.update();
+    if(this.over) return;
+    this.bv.lock=true;
+    $('#pstatus').innerHTML='相手が考えています…';
+    setTimeout(()=>{
+      const mv=bestMove(this.pos,this.level);
+      if(mv){ this.push(mv); this.pos.doMove(mv); }
+      this.bv.lock=false; this.bv.setPos(this.pos); this.update();
+    },260);
+  },
+  undo(){
+    if(this.pos.hist.length===0) return;
+    this.pos.undoMove(); this.kifu.pop();
+    if(this.pos.turn!==0&&this.pos.hist.length){ this.pos.undoMove(); this.kifu.pop(); }
+    this.prevTo=this.pos.lastMove?this.pos.lastMove.to:null;
+    this.over=false; this.bv.lock=false; this.bv.setPos(this.pos); $('#pmsg').innerHTML=''; this.update();
+  },
+  hint(){
+    if(this.over||this.pos.turn!==0) return;
+    const m=bestMove(this.pos,3); if(!m) return;
+    $('#pmsg').innerHTML='<div class="hintbox">候補手　<b style="font-family:var(--mincho);font-size:17px">'+this.pos.moveText(m)+'</b>　'+describeMove(this.pos,m)+'</div>';
+  },
+  resign(){ if(this.over)return; this.over=true; this.overText='投了しました。'; this.bv.lock=true; this.update(); }
+};
+
+/* ============================================================
+   ドリル
+   ============================================================ */
+const Drill={
+  mode:'t1', i:0, remain:0, line:[], solved:false,
+  n(){ return this.mode==='tesuji' ? 0 : +this.mode[1]; },
+  list(){ return this.mode==='tesuji' ? TESUJI : TSUME[this.n()]; },
+  cur(){ return this.list()[this.i]; },
+  mount(host){
+    host.innerHTML=`<div class="cols">
+      <div class="card"><div class="chips" id="dchips">
+        <button class="chip" data-m="t1">一手詰</button><button class="chip" data-m="t3">三手詰</button>
+        <button class="chip" data-m="t5">五手詰</button><button class="chip" data-m="tesuji">攻めの手筋</button></div>
+        <div id="db"></div><p class="caption" id="dq"></p></div>
+      <div><div class="card">
+        <h2 class="sec" id="dtitle"></h2><p class="lead" id="dsub"></p>
+        <div class="prose" id="dtext"></div>
+        <div id="dline" class="kifu" style="margin-top:12px;display:none"></div>
+        <div class="row" style="margin-top:14px"><button class="btn" id="dhint">ヒント</button>
+        <button class="btn" id="dans">答えを見る</button>
+        <button class="btn" id="dreset">やり直す</button><button class="btn pri" id="dnext">次の問題 ▶</button></div>
+        <div id="dmsg" aria-live="polite"></div></div>
+        <div class="card" id="dpick"></div></div></div>`;
+    $$('#dchips .chip').forEach(b=>b.onclick=()=>{this.mode=b.dataset.m;this.i=0;this.load();});
+    $('#dnext').onclick=()=>{ this.i=(this.i+1)%this.list().length; this.load(); };
+    $('#dhint').onclick=()=>{ const p=this.cur(); $('#dmsg').innerHTML='<div class="hintbox">'+(p.hint||p.exp)+'</div>'; };
+    $('#dans').onclick=()=>this.answer();
+    $('#dreset').onclick=()=>this.load();
+    this.bv=new BoardView($('#db'),{sides:[0],onMove:m=>this.onMove(m)});
+    this.load();
+  },
+  load(){
+    $$('#dchips .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===this.mode));
+    const p=this.cur(), list=this.list(), n=this.n();
+    this.pos=Pos.from(p.spec); this.bv.lock=false; this.bv.setPos(this.pos);
+    this.remain=n; this.line=[]; this.prevTo=null; this.solved=false;
+    $('#dmsg').innerHTML=''; $('#dline').style.display='none'; $('#dline').innerHTML='';
+    if(n){
+      const kan=['','一','二','三','四','五'][n];
+      $('#dtitle').textContent=kan+'手詰 '+(this.i+1)+' / '+list.length;
+      $('#dsub').textContent='先手番。'+kan+'手で詰ませてください';
+      $('#dtext').innerHTML= n===1
+        ? '<p>持ち駒をクリックしてから打つマスを選ぶか、盤上の駒を動かします。玉が「逃げられない・取れない・遮れない」状態になれば詰みです。</p>'
+        : `<p>攻めるほうは<b>毎回かならず王手</b>をかけ続けます。王手にならない手や、詰みを逃す手は受け付けません。</p>
+           <p>あなたが一手指すと、玉方はいちばん長く粘る手で応じます。残り${n}手。</p>`;
+      $('#dq').textContent=kan+'手で詰み。';
+      $('#dans').style.display='';
+    }else{
+      $('#dtitle').textContent=p.name;
+      $('#dsub').textContent='手筋 '+(this.i+1)+' / '+list.length;
+      $('#dtext').innerHTML='<p>'+p.q+'</p>';
+      $('#dq').textContent=p.q;
+      $('#dans').style.display='none';
+    }
+    this.picker();
+  },
+  picker(){
+    const box=$('#dpick'); if(!box) return;
+    const n=this.n();
+    box.innerHTML='<h2 class="sec" style="font-size:16px">'+(n?'この手数の問題':'手筋の一覧')+'</h2><div class="chips" id="dnums"></div>';
+    const c=$('#dnums',box);
+    this.list().forEach((_,k)=>{
+      const b=el('button','chip', String(k+1));
+      b.setAttribute('aria-pressed', k===this.i);
+      b.onclick=()=>{ this.i=k; this.load(); };
+      c.appendChild(b);
+    });
+  },
+  pushLine(m){ this.pushText(this.pos.moveText(m,this.prevTo), m.to); },
+  pushText(txt,to){
+    this.line.push(txt);
+    this.prevTo=to;
+    const d=$('#dline'); d.style.display='';
+    d.innerHTML=this.line.map((t,k)=>`<div${k===this.line.length-1?' class="cur"':''}><span class="n">${k+1}</span><span>${t}</span></div>`).join('');
+  },
+  onMove(m){
+    if(this.solved) return;
+    const n=this.n();
+    if(!n){                                   // 手筋クイズ
+      const p=this.cur();
+      this.pos.doMove(m);
+      if(p.answers.indexOf(i2sq(m.to))>=0){
+        this.bv.setPos(this.pos); this.bv.lock=true;
+        $('#dmsg').innerHTML='<div class="okbox big"><b>正解。</b>'+p.exp+'</div>';
+        celebrate($('#db'), '正解', p.name);
+      }else{
+        this.pos.undoMove(); this.bv.setPos(this.pos);
+        $('#dmsg').innerHTML='<div class="ngbox">その場所ではありません。狙いの駒が二枚とも当たる場所を探します。</div>';
+      }
+      return;
+    }
+    const txt=this.pos.moveText(m,this.prevTo);
+    this.pos.doMove(m);
+    if(!this.pos.inCheck(1)){
+      this.pos.undoMove(); this.bv.setPos(this.pos);
+      $('#dmsg').innerHTML='<div class="ngbox">王手になっていません。詰将棋では、攻めるほうは毎回かならず王手をかけ続けます。</div>';
+      return;
+    }
+    if(!tsumeDefend(this.pos, this.remain-1)){
+      this.pos.undoMove(); this.bv.setPos(this.pos);
+      $('#dmsg').innerHTML='<div class="ngbox">王手にはなりましたが、これでは残り'+this.remain+'手で詰みません。玉の逃げ道と、打った駒が取られないかを確かめてください。</div>';
+      return;
+    }
+    this.pushText(txt,m.to); this.remain--;
+    this.bv.setPos(this.pos);
+    if(this.pos.legalMoves(1).length===0){ this.win(); return; }
+    const d=tsumeDefense(this.pos, this.remain-1);
+    this.pushLine(d); this.pos.doMove(d); this.remain--;
+    this.bv.setPos(this.pos);
+    if(this.pos.legalMoves(1).length===0){ this.win(); return; }
+    $('#dmsg').innerHTML='<div class="okbox big">正解。玉は '+this.line[this.line.length-1]+' と逃げました。あと'+this.remain+'手で詰ませてください。</div>';
+  },
+  win(){
+    this.solved=true; this.bv.lock=true;
+    $('#dmsg').innerHTML='<div class="okbox big"><b>詰み。正解です。</b>手順は '+this.line.join('　')+'。</div>';
+    celebrate($('#db'), '詰み', ['','一手詰','','三手詰','','五手詰'][this.n()]+' 正解');
+  },
+  answer(){
+    const n=this.n(); if(!n) return;
+    this.pos=Pos.from(this.cur().spec); this.bv.setPos(this.pos); this.bv.lock=true;
+    this.line=[]; this.prevTo=null; this.solved=true;
+    let r=n;
+    while(r>0){
+      if(this.pos.turn===0){
+        const sols=tsumeSolutions(this.pos,r); if(!sols.length) break;
+        this.pushLine(sols[0]); this.pos.doMove(sols[0]);
+      }else{
+        const d=tsumeDefense(this.pos,r-1); if(!d) break;
+        this.pushLine(d); this.pos.doMove(d);
+      }
+      r--;
+      if(this.pos.turn===1 && this.pos.legalMoves(1).length===0) break;
+    }
+    this.bv.setPos(this.pos);
+    $('#dmsg').innerHTML='<div class="hintbox"><b>解答</b>　'+this.line.join('　')+'<br>「やり直す」で最初の形に戻せます。</div>';
+  }
+};
+
+/* ============================================================
+   正解の演出
+   ============================================================ */
+const BURST_K=['歩','金','銀','角','飛','桂','香','と','竜','馬'];
+function celebrate(host, text, sub){
+  if(!host) return;
+  const card = host.closest ? (host.closest('.card')||host) : host;
+  const old=$('.burst',card); if(old) old.remove();
+  const b=el('div','burst');
+  b.innerHTML='<div class="flash"></div><div class="ring"></div><div class="ring b"></div>';
+  const n=26;
+  for(let i=0;i<n;i++){
+    const a=(i/n)*Math.PI*2 + Math.random()*0.34;
+    const d=110+Math.random()*180;
+    const p=el('div','p'+(i%5===0?' s':(i%5===1?' k':'')));
+    p.style.setProperty('--dx', (Math.cos(a)*d).toFixed(1)+'px');
+    p.style.setProperty('--dy', (Math.sin(a)*d*0.82).toFixed(1)+'px');
+    p.style.setProperty('--rot', ((Math.random()*3-1.5)*360).toFixed(0)+'deg');
+    p.style.animationDelay=(Math.random()*0.16).toFixed(2)+'s';
+    p.style.animationDuration=(1.0+Math.random()*0.5).toFixed(2)+'s';
+    b.appendChild(p);
+  }
+  const l=el('div','label',text||'正解');
+  b.appendChild(l);
+  if(sub) b.appendChild(el('div','sub',sub));
+  card.appendChild(b);
+  setTimeout(()=>{ b.remove(); }, 1700);
+}
+
+/* ============================================================
+   寄せ（王手と詰みの型）
+   ============================================================ */
+const Yose={
+  mount(host){
+    host.innerHTML=`<div class="cols narrow">
+      <div class="card"><h2 class="sec">目次</h2><p class="lead">王手から詰みまで</p>
+        <div class="menu" id="ymenu">
+          <button data-k="check"><span>1　王手の種類</span><span class="sub">七つの型と反則</span></button>
+          <button data-k="shape"><span>2　詰みの形</span><span class="sub">八つの基本形を図で</span></button>
+          <button data-k="yose"><span>3　寄せの考え方</span><span class="sub">詰めろ・必至・速度</span></button>
+        </div></div>
+      <div id="ydetail"></div></div>`;
+    $$('#ymenu button',host).forEach(b=>{ b.onclick=()=>this.show(b.dataset.k); });
+    const k=this.pend||'check'; this.pend=null; this.show(k);
+  },
+  show(k){
+    $$('#ymenu button').forEach(b=>b.setAttribute('aria-current',b.dataset.k===k));
+    const d=$('#ydetail');
+    if(k==='check') this.check(d);
+    if(k==='shape') this.shape(d);
+    if(k==='yose') this.yose(d);
+    window.scrollTo({top:0,behavior:'instant'});
+  },
+  list(d,title,lead,intro,arr){
+    d.innerHTML=`<div class="card"><h2 class="sec">${title}</h2><p class="lead">${lead}</p>
+      <div class="prose">${intro}</div><div id="ylist"></div></div>`;
+    const box=$('#ylist',d);
+    arr.forEach(t=>{
+      const c=el('div','');
+      c.style.cssText='margin-top:17px;padding-left:14px;border-left:2px solid var(--kincha)';
+      c.innerHTML=`<p style="font-family:var(--mincho);font-size:15.5px;color:var(--paper);margin:0 0 6px;letter-spacing:.06em">${t.n}</p>
+        <p style="color:var(--muted);font-size:13.5px;line-height:1.95;margin:0">${t.d}</p>`;
+      box.appendChild(c);
+    });
+  },
+  check(d){
+    this.list(d,'王手の種類','かけ方が違えば、受け方も変わる',
+      `<p>王手は「次の一手で玉が取れる」という状態を作ること。かけられた側は、<b>逃げる・取る・遮る</b>のどれかで必ず解消しなければなりません。逆に言えば、<b>この三つを全部ふさげば詰み</b>です。</p>
+       <p>王手の種類によって、その三つのうちどれが使えないかが変わります。ここを知っていると、詰むか詰まないかの見当が早くつきます。</p>`, CHECKS);
+  },
+  shape(d){
+    d.innerHTML=`<div class="card"><h2 class="sec">詰みの形</h2>
+      <p class="lead">この八つを覚えるだけで、終盤が変わる</p>
+      <div class="prose"><p>詰将棋がなかなか解けないのは、才能ではなく<b>ゴールの形を知らないから</b>です。「最後にこうなればいい」が頭に入っていれば、そこへ持っていく手順を逆算できます。</p>
+      <p>下はどれも<b>すでに詰んでいる図</b>です。手を考える必要はありません。玉がどこにも動けないこと、そして王手をかけている駒が取られないことを、目で確かめてください。</p></div>
+      <div id="ylist"></div></div>`;
+    const box=$('#ylist',d);
+    MATESHAPES.forEach(m=>{
+      const f=el('div','fig'); f.style.marginTop='20px';
+      const pieces=m.pieces.map(p=>({r:+p.sq[1]-1, c:9-(+p.sq[0]), t:(p.p?KJP[p.t]:KJ[p.t]), g:p.o===1, p:p.p}));
+      const kingSq=m.pieces.find(p=>p.t==='K'&&p.o===1);
+      f.innerHTML=`<p class="cap">${m.n}</p>
+        ${miniBan({alt:m.n,pieces,marks:[{r:+kingSq.sq[1]-1,c:9-(+kingSq.sq[0])}]})}
+        <p class="d" style="color:var(--muted);font-size:13px;line-height:1.95;margin:11px 0 0">${m.d}</p>`;
+      box.appendChild(f);
+    });
+    const tip=el('div','notebox');
+    tip.innerHTML='この形を覚えたら、ドリルタブの一手詰・三手詰で「その形に持っていく手」を探す練習をしてみてください。';
+    box.appendChild(tip);
+  },
+  yose(d){
+    this.list(d,'寄せの考え方','詰ます前の段階が、じつは勝負どころ',
+      `<p>終盤でいちばん多い負け方は「詰ませられなかった」ではなく、<b>攻める順番を間違えた</b>です。王手を続けて追いかけ回した結果、玉が広いところへ逃げてしまう——初心者の負け方の典型です。</p>
+       <p>覚えることは多くありません。下の七つだけ頭に入れておけば、終盤の指し方がはっきり変わります。</p>`, YOSE);
+  }
+};
+
+/* ============================================================
+   観戦
+   ============================================================ */
+const Watch={
+  gi:0, ply:0, timer:null,
+  mount(host){
+    host.innerHTML=`<div class="cols">
+      <div><div class="card" id="wboardcard"><div id="wb"></div></div></div>
+      <div>
+        <div class="card">
+          <h2 class="sec" id="wtitle"></h2><p class="lead" id="wsub"></p>
+          <div class="prose" id="wlead"></div>
+          <div class="stepbar row" style="margin-top:14px">
+            <button class="btn" id="wfirst">最初へ</button><button class="btn" id="wprev">◀ 一手戻す</button>
+            <button class="btn pri" id="wnext">一手進める ▶</button><button class="btn" id="wauto">自動再生</button>
+            <button class="btn" id="wlast">最後まで</button></div>
+          <div class="prog"><i id="wfill"></i></div>
+          <p class="caption" id="wpos"></p>
+          <div id="wnote"></div>
+        </div>
+        <div class="card"><h2 class="sec" style="font-size:16px">棋譜</h2><div class="kifu" id="wkifu"></div></div>
+        <div class="card"><h2 class="sec" style="font-size:16px">対局を選ぶ</h2><div class="menu" id="wmenu"></div></div>
+      </div></div>`;
+    const m=$('#wmenu',host); let cat=null;
+    const order=['相居飛車','対抗形','受け方'];
+    this.order=GAMES.map((g,i)=>i).sort((a,b)=>{
+      const d=order.indexOf(GAMES[a].cat)-order.indexOf(GAMES[b].cat);
+      return d||a-b;
+    });
+    this.order.forEach(i=>{
+      const g=GAMES[i];
+      if(g.cat!==cat){ cat=g.cat; m.appendChild(el('div','grp',cat)); }
+      const b=el('button','',`<span>${g.name}</span><span class="sub">${g.moves.length}手</span>`);
+      b.onclick=()=>{ this.stop(); this.gi=i; this.load(); };
+      m.appendChild(b);
+    });
+    this.bv=new BoardView($('#wb'),{sides:[]});
+    $('#wfirst').onclick=()=>{this.stop();this.go(0);};
+    $('#wprev').onclick=()=>{this.stop();this.go(this.ply-1);};
+    $('#wnext').onclick=()=>{this.stop();this.go(this.ply+1);};
+    $('#wlast').onclick=()=>{this.stop();this.go(this.g().moves.length);};
+    $('#wauto').onclick=()=>this.toggle();
+    this.load();
+  },
+  g(){ return GAMES[this.gi]; },
+  load(){
+    const g=this.g();
+    $$('#wmenu button').forEach((b,k)=>b.setAttribute('aria-current', this.order[k]===this.gi));
+    $('#wtitle').textContent=g.name;
+    $('#wsub').textContent=g.cat+'　全'+g.moves.length+'手　'+g.end;
+    $('#wlead').innerHTML='<p>'+g.lead+'</p>';
+    $('#wkifu').innerHTML=g.moves.map((_,i)=>`<div data-p="${i+1}"><span class="n">${i+1}</span><span></span></div>`).join('');
+    $$('#wkifu div').forEach(d=>{ d.onclick=()=>{this.stop();this.go(+d.dataset.p);}; });
+    this.go(0);
+  },
+  go(n){
+    const g=this.g();
+    n=Math.max(0,Math.min(g.moves.length,n));
+    this.ply=n;
+    const pos=Pos.start({});
+    const texts=[]; let prev=null, last=null;
+    for(let i=0;i<n;i++){
+      const m=parseMove(pos,g.moves[i]);
+      let t; try{ t=pos.moveText(m,prev); }catch(e){ t=''; }
+      texts.push(t); prev=m.to; last=m;
+      pos.doMove(m);
+    }
+    this.bv.setPos(pos); this.bv.render();
+    $$('#wkifu div').forEach((d,i)=>{
+      d.querySelectorAll('span')[1].textContent = i<texts.length?texts[i]:'';
+      d.classList.toggle('cur', i===n-1);
+    });
+    if(n) { const c=$('#wkifu .cur'); if(c&&c.scrollIntoView) c.scrollIntoView({block:'nearest'}); }
+    $('#wfill').style.width=(n/g.moves.length*100)+'%';
+    $('#wpos').textContent = n===0 ? '開始局面。' :
+      (n+'手目　'+(n%2?'▲先手':'△後手')+'　'+texts[n-1]) + (n===g.moves.length?'　—　ここで終局':'');
+    const note=g.notes[n];
+    $('#wnote').innerHTML = note ? '<div class="notebox">'+note+'</div>'
+      : (n===0?'<div class="notebox">「一手進める」か「自動再生」で進みます。棋譜の行を押すと、その手まで一気に飛べます。</div>':'');
+    if(n===g.moves.length && this.timer) this.stop();
+  },
+  toggle(){
+    if(this.timer){ this.stop(); return; }
+    $('#wauto').textContent='停止';
+    $('#wauto').classList.add('pri');
+    this.timer=setInterval(()=>{
+      if(this.ply>=this.g().moves.length){ this.stop(); return; }
+      this.go(this.ply+1);
+    }, 1100);
+  },
+  stop(){
+    if(this.timer){ clearInterval(this.timer); this.timer=null; }
+    const b=$('#wauto'); if(b){ b.textContent='自動再生'; b.classList.remove('pri'); }
+  }
+};
+
+/* ============================================================
+   ハンデ
+   ============================================================ */
+const CAMP=['香','桂','銀','金','玉','金','銀','桂','香'];
+function handiFig(drop){
+  const C=27,MXs=4,MYs=4,W=MXs*2+9*C,H=MYs*2+3*C;
+  const gone=new Set(drop);
+  const sqOf=(r,c)=>''+(9-c)+(r+1);
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="上手の陣">`;
+  g+=`<rect x="${MXs}" y="${MYs}" width="${9*C}" height="${3*C}" fill="#e7c68b" stroke="#6d4f26"/>`;
+  for(let i=1;i<9;i++) g+=`<line x1="${MXs+i*C}" y1="${MYs}" x2="${MXs+i*C}" y2="${MYs+3*C}" stroke="#6d4f26" stroke-width=".7"/>`;
+  for(let i=1;i<3;i++) g+=`<line x1="${MXs}" y1="${MYs+i*C}" x2="${MXs+9*C}" y2="${MYs+i*C}" stroke="#6d4f26" stroke-width=".7"/>`;
+  const put=(r,c,t)=>{
+    const sq=sqOf(r,c), x=MXs+c*C+C/2, y=MYs+r*C+C/2;
+    if(gone.has(sq)){
+      g+=`<g transform="translate(${x},${y}) rotate(180)" opacity=".9">
+        <polygon points="0,-12 6,-8 8.5,11.5 -8.5,11.5 -6,-8" fill="none" stroke="#d24a30"
+          stroke-width="1.2" stroke-dasharray="3 2.5"/>
+        <line x1="-6.5" y1="-6.5" x2="6.5" y2="8" stroke="#d24a30" stroke-width="1.6"/>
+        <line x1="6.5" y1="-6.5" x2="-6.5" y2="8" stroke="#d24a30" stroke-width="1.6"/></g>`;
+    }else{
+      g+=`<g transform="translate(${x},${y}) rotate(180)">
+        <polygon points="0,-12 6,-8 8.5,11.5 -8.5,11.5 -6,-8" fill="#f3dcaa" stroke="#a97f3d" stroke-width="1"/>
+        <text y="1.5" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#2b1c08">${t}</text></g>`;
+    }
+  };
+  for(let c=0;c<9;c++) put(0,c,CAMP[c]);
+  put(1,1,'飛'); put(1,7,'角');
+  for(let c=0;c<9;c++) put(2,c,'歩');
+  return g+'</svg>';
+}
+const Handi={
+  step:null,
+  mount(host){
+    host.innerHTML=`<div class="cols narrow">
+      <div class="card"><h2 class="sec">目次</h2><p class="lead">上から順に</p>
+        <div class="menu" id="hmenu">
+          <button data-k="pick"><span>1　どれで指す？</span><span class="sub">相手に合わせて選ぶ</span></button>
+          <button data-k="koma"><span>2　駒落ち一覧</span><span class="sub">八種類を図で見る</span></button>
+          <button data-k="tips"><span>3　盤の外のハンデ</span><span class="sub">駒を減らさない調整</span></button>
+          <button data-k="note"><span>4　駒落ちの作法</span><span class="sub">上手・下手・指し始め</span></button>
+        </div></div>
+      <div id="hdetail"></div></div>`;
+    $$('#hmenu button',host).forEach(b=>{ b.onclick=()=>this.show(b.dataset.k); });
+    this.show('pick');
+  },
+  show(k){
+    $$('#hmenu button').forEach(b=>b.setAttribute('aria-current',b.dataset.k===k));
+    const d=$('#hdetail');
+    if(k==='pick') this.pick(d);
+    if(k==='koma') this.koma(d);
+    if(k==='tips') this.tips(d);
+    if(k==='note') this.note(d);
+    window.scrollTo({top:0,behavior:'instant'});
+  },
+  pick(d){
+    d.innerHTML=`<div class="card"><h2 class="sec">どれで指す？</h2>
+      <p class="lead">弱いほうの今の状態で選ぶ</p>
+      <div class="prose"><p>手合いは<b>「今できること」より一段やさしいところ</b>から始めるのがコツです。勝てる形を何度か味わってから上げていくほうが、続きます。負けが三回続いたら一段下げる、勝ちが三回続いたら一段上げる——それくらいの気楽さで動かしてください。</p></div>
+      <div class="menu" id="hsteps" style="margin-top:14px"></div></div>
+      <div class="card" id="hrec"></div>`;
+    const m=$('#hsteps');
+    HANDI_STEPS.forEach(st=>{
+      const b=el('button','',`<span>${st.who}</span><span class="sub">${st.title}</span>`);
+      b.onclick=()=>{ this.step=st.id; this.rec(); };
+      m.appendChild(b);
+    });
+    if(!this.step) this.step=HANDI_STEPS[0].id;
+    this.rec();
+  },
+  rec(){
+    const st=HANDI_STEPS.find(x=>x.id===this.step);
+    $$('#hsteps button').forEach((b,i)=>b.setAttribute('aria-current',HANDI_STEPS[i].id===this.step));
+    const pr=PRESETS.find(p=>p.id===st.preset), hc=HANDICAPS.find(h=>h.id===st.hcp);
+    const lv=['','やさしい','ふつう','つよい'][st.level];
+    const box=$('#hrec');
+    box.innerHTML=`<h2 class="sec">${st.title}</h2>
+      <p class="lead">${st.who}なら、この設定</p>
+      <div class="prose"><p>${st.body}</p></div>
+      <div class="deftbl"><table>
+        <tr><th>練習セット</th><td>${pr.name}</td></tr>
+        <tr><th>駒落ち</th><td>${hc.name}</td></tr>
+        <tr><th>相手の強さ</th><td>${lv}</td></tr></table></div>
+      ${st.hcp!=='h0'?`<div class="fig" style="margin-top:16px"><p class="cap">上手（相手）の陣　×＝抜く駒</p>${handiFig(hc.drop)}</div>`:''}
+      <div class="row" style="margin-top:14px"><button class="btn pri" id="hgo">この設定で対局を始める</button></div>`;
+    $('#hgo',box).onclick=()=>{
+      Play.preset=st.preset; Play.hcp=st.hcp; Play.level=st.level;
+      go('play');
+    };
+  },
+  koma(d){
+    d.innerHTML=`<div class="card"><h2 class="sec">駒落ち一覧</h2>
+      <p class="lead">強いほうの駒を、あらかじめ抜いておく</p>
+      <div class="prose"><p>強いほうを<b>上手（うわて）</b>、弱いほうを<b>下手（したて）</b>と呼びます。上手の駒を何枚抜くかで差を調整する——これが将棋のハンデの基本です。抜く駒は決まっていて、下の八通りが正式な手合いです。</p></div>
+      <div id="hlist"></div></div>`;
+    const list=$('#hlist',d);
+    HANDICAPS.filter(h=>h.drop.length).forEach(h=>{
+      const box=el('div','fig');
+      box.style.marginTop='18px';
+      box.innerHTML=`<p class="cap">${h.name}　—　棋力差：${h.gap}</p>${handiFig(h.drop)}
+        <p class="d" style="color:var(--muted);font-size:12.5px;line-height:1.9;margin:10px 0 0">${h.desc}</p>`;
+      list.appendChild(box);
+    });
+  },
+  tips(d){
+    d.innerHTML=`<div class="card"><h2 class="sec">盤の外のハンデ</h2>
+      <p class="lead">駒を減らさずに差を埋める</p>
+      <div class="prose"><p>駒落ちは差がはっきり出る代わりに、<b>抜かれた側は「弱い駒で指している」と自覚してしまいます</b>。小さい子と指すときは、駒はそのままにして、指し方のほうで加減するやり方も併せて使うと、勝ち負けが自然になります。</p>
+      <p>いくつでも組み合わせて構いません。効きすぎたら一つ外す、それだけです。</p></div>
+      <div id="htips"></div></div>`;
+    const box=$('#htips',d);
+    HANDI_TIPS.forEach(t=>{
+      const c=el('div','');
+      c.style.cssText='margin-top:16px;padding-left:14px;border-left:2px solid var(--kincha)';
+      c.innerHTML=`<p style="font-family:var(--mincho);font-size:15.5px;color:var(--paper);margin:0 0 6px;letter-spacing:.06em">${t.t}</p>
+        <p style="color:var(--muted);font-size:13.5px;line-height:1.95;margin:0">${t.d}</p>`;
+      box.appendChild(c);
+    });
+  },
+  note(d){
+    d.innerHTML=`<div class="card"><h2 class="sec">駒落ちの作法</h2>
+      <p class="lead">知っておくと、対局が形になる</p>
+      <div class="prose">
+      <p><b>呼び方</b>　強いほうが<b>上手</b>、弱いほうが<b>下手</b>。平手の「先手・後手」とは別の言い方です。</p>
+      <p><b>指し始め</b>　駒落ちでは<b>下手から指します</b>。駒を抜かれている上手が先に指すことはありません。棋譜も下手が▲、上手が△です。</p>
+      <p><b>抜く駒</b>　上手の駒を抜きます。抜いた駒は駒箱にしまい、持ち駒にはなりません。抜く順番は、<k>香</k>→<k>角</k>→<k>飛</k>→両方→両香→両桂→両銀。飛と角のどちらを先に抜くかは流儀があります。</p>
+      <p><b>下手の心得</b>　駒が多いほうが有利——のはずが、初心者は駒を余らせて負けます。駒落ちでは<b>攻める駒をぜんぶ使う</b>のが基本です。飛車・角・銀・桂を残さず前線へ運ぶ。上手は隙を待っているので、こちらから動かないと何も起きません。</p>
+      <p><b>上手の心得</b>　わざと変な手を指す必要はありません。ふつうに指して、下手の攻めを受け止めるだけで十分に難しい将棋になります。手加減は駒の枚数のほうでつけてください。</p>
+      <p style="color:var(--muted);font-size:13px">なお、この対局画面では簡略化のため、駒落ちでも<b>あなたが先に指す</b>形にしています。あなたが下手、相手が上手です。</p>
+      </div></div>`;
+  }
+};
+
+/* ============================================================
+   コース（学習ルート）
+   ============================================================ */
+const Progress={
+  key:'shogi-course-v1', mem:{},
+  load(){
+    try{ const r=localStorage.getItem(this.key); if(r) this.mem=JSON.parse(r)||{}; }catch(e){}
+    return this.mem;
+  },
+  save(){ try{ localStorage.setItem(this.key, JSON.stringify(this.mem)); }catch(e){} },
+  done(id){ return !!this.mem[id]; },
+  toggle(id){ if(this.mem[id]) delete this.mem[id]; else this.mem[id]=1; this.save(); },
+  clear(){ this.mem={}; this.save(); },
+  count(arr){ return arr.filter(s=>this.done(s.id)).length; }
+};
+Progress.load();
+
+function jump(g){
+  if(g.tab==='learn'){ Learn.idx=g.idx; }
+  if(g.tab==='joseki'){
+    if(g.castle) Joseki.sel={kind:'castle',id:g.castle};
+    else { Joseki.sel={kind:'line',id:g.line}; Joseki.pendPractice=!!g.practice; }
+    Joseki.ply=0;
+  }
+  if(g.tab==='play'){ Play.preset=g.preset; Play.hcp=g.hcp; Play.level=g.level; }
+  if(g.tab==='drill'){ Drill.mode=g.mode; Drill.i=g.i||0; }
+  if(g.tab==='watch'){ const k=GAMES.findIndex(x=>x.id===g.id); if(k>=0) Watch.gi=k; }
+  if(g.tab==='yose'){ Yose.pend=g.pend; }
+  go(g.tab);
+}
+
+const Course={
+  branch:null,
+  mount(host){
+    this.branch = this.branch || Progress.mem.__branch || null;
+    host.innerHTML=`<div class="cols narrow">
+      <div class="card"><h2 class="sec">進み方</h2><p class="lead">上から順に</p>
+        <div class="menu" id="cmenu">
+          <button data-k="base"><span>基礎コース</span><span class="sub" id="cbn"></span></button>
+          <button data-k="branch"><span>コースを選ぶ</span><span class="sub">攻める／受ける</span></button>
+          <button data-k="a"><span>コースA　攻めたい</span><span class="sub" id="can"></span></button>
+          <button data-k="b"><span>コースB　安全に指したい</span><span class="sub" id="cbb"></span></button>
+        </div>
+        <div class="row"><button class="btn" id="creset">進捗をリセット</button></div>
+        <p class="caption">チェックはこの端末のブラウザに保存されます。</p></div>
+      <div id="cdetail"></div></div>`;
+    $$('#cmenu button',host).forEach(b=>b.onclick=()=>this.show(b.dataset.k));
+    $('#creset',host).onclick=()=>{
+      if(!confirm('すべてのチェックを外します。よろしいですか。')) return;
+      Progress.clear(); this.branch=null; this.mount(host);
+    };
+    this.counts();
+    const base=Progress.count(COURSE_BASE);
+    this.show(base<COURSE_BASE.length ? 'base' : (this.branch? this.branch : 'branch'));
+  },
+  counts(){
+    const set=(id,arr)=>{ const e=$(id); if(e) e.textContent=Progress.count(arr)+' / '+arr.length; };
+    set('#cbn',COURSE_BASE); set('#can',COURSE_A); set('#cbb',COURSE_B);
+  },
+  show(k){
+    $$('#cmenu button').forEach(b=>b.setAttribute('aria-current',b.dataset.k===k));
+    const d=$('#cdetail');
+    if(k==='branch') return this.chooser(d);
+    const map={base:[COURSE_BASE,'基礎コース','ルールを知らないところから、一局指せるところまで'],
+               a:[COURSE_A,'コースA　攻めたい','居飛車 → 棒銀 → 舟囲い'],
+               b:[COURSE_B,'コースB　安全に指したい','四間飛車 → 美濃囲い → 受けて捌く']};
+    const [arr,title,lead]=map[k];
+    const intro = k==='base'
+      ? '<p>順番に一つずつ。<b>やってみたら「できた」を押して</b>ください。チェックが残るので、次に開いたとき続きから始められます。</p><p>全部終わったら、二つのコースのどちらかへ進みます。</p>'
+      : (k==='a'
+        ? '<p>自分から攻めていく形を覚えるコースです。<b>棒銀は居飛車の戦法</b>なので、囲いも居飛車用の舟囲いを使います。攻める楽しさが早く分かるぶん、受け方も一緒に覚えます。</p>'
+        : '<p>玉を固く囲って、相手の攻めを受け止めてから反撃するコースです。<b>美濃囲いは振り飛車とセット</b>。攻め急がずに済むので、序盤で崩れにくいのが利点です。</p>');
+    const n=Progress.count(arr);
+    d.innerHTML=`<div class="card"><h2 class="sec">${title}</h2><p class="lead">${lead}</p>
+      <div class="prose">${intro}</div>
+      <div class="prog" style="margin-top:16px"><i style="width:${n/arr.length*100}%"></i></div>
+      <p class="caption" id="cprog">${n} / ${arr.length} 完了${n===arr.length?'　—　このコースは終わりです。おつかれさまでした。':''}</p>
+      </div><div id="csteps"></div>`;
+    const box=$('#csteps');
+    arr.forEach((st,i)=>{
+      const done=Progress.done(st.id);
+      const c=el('div','card step'+(done?' done':''));
+      c.innerHTML=`<div class="steptop">
+          <span class="stepno">${done?'✓':(i+1)}</span>
+          <div><h2 class="sec" style="font-size:18px;margin:0">${st.t}</h2></div></div>
+        <p class="d">${st.why}</p><p class="d2">${st.do}</p>
+        <div class="row"><button class="btn pri go">${st.cta}</button>
+        <button class="btn chk">${done?'できたを取り消す':'できた ✓'}</button></div>`;
+      $('.go',c).onclick=()=>jump(st.go);
+      $('.chk',c).onclick=()=>{
+        Progress.toggle(st.id);
+        if(Progress.done(st.id) && k==='base' && Progress.count(COURSE_BASE)===COURSE_BASE.length){
+          celebrate(box.firstChild||box,'基礎修了','コースを選びましょう');
+        }
+        this.counts(); this.show(k);
+      };
+      box.appendChild(c);
+    });
+    if(k==='base' && Progress.count(COURSE_BASE)===COURSE_BASE.length){
+      const nx=el('div','card');
+      nx.innerHTML=`<h2 class="sec">次はコース選び</h2>
+        <p class="d">基礎はここまでです。ここから先は、指したい将棋の形で道が分かれます。</p>
+        <div class="row"><button class="btn pri" id="cgob">コースを選ぶ</button></div>`;
+      $('#cgob',nx).onclick=()=>this.show('branch');
+      box.appendChild(nx);
+    }
+    window.scrollTo({top:0,behavior:'instant'});
+  },
+  chooser(d){
+    d.innerHTML=`<div class="card"><h2 class="sec">どちらの将棋を指したい？</h2>
+      <p class="lead">戦型と囲いはセットで覚える</p>
+      <div class="prose"><p>戦法と囲いには相性があります。<b>棒銀は居飛車、美濃囲いは振り飛車</b>——この組み合わせを混ぜると、駒がぶつかったときに形が崩れます。だから最初はどちらか一方に絞るのが早道です。</p>
+      <p>あとで乗り換えても構いません。両方やっても構いません。ただし<b>一度に一つ</b>。</p></div>
+      <div class="figrow" style="margin-top:18px">
+        <div class="card" style="margin:0"><p class="t2">コースA　攻めたい</p>
+          <p class="d">飛車を右に置いたまま、銀を前線へ押し出して二筋を破ります。狙いが素直で、攻める楽しさが早く分かります。玉は舟囲いという簡易な囲いで済ませ、そのぶん攻めに手数を使います。</p>
+          <p class="d2">居飛車 → 棒銀 → 舟囲い　／　勝ち方がはっきりする代わりに、受けが薄い</p>
+          <div class="row"><button class="btn pri" id="cpa">コースAで進む</button></div></div>
+        <div class="card" style="margin:0"><p class="t2">コースB　安全に指したい</p>
+          <p class="d">飛車を左に振り、玉を反対側の美濃囲いに固めます。相手が攻めてくるのを受け止めてから、大駒を捌いて反撃します。序盤で崩れにくいのが利点です。</p>
+          <p class="d2">四間飛車 → 美濃囲い → 受けて捌く　／　安定する代わりに、決着まで長くなりがち</p>
+          <div class="row"><button class="btn pri" id="cpb">コースBで進む</button></div></div>
+      </div>
+      <p class="caption" style="margin-top:16px">迷ったら——負けてもいいから攻めたい人はA、負けにくいほうが好きな人はB。子どもと指すならAのほうが盛り上がります。</p>
+      </div>`;
+    $('#cpa',d).onclick=()=>{ this.branch='a'; Progress.mem.__branch='a'; Progress.save(); this.show('a'); };
+    $('#cpb',d).onclick=()=>{ this.branch='b'; Progress.mem.__branch='b'; Progress.save(); this.show('b'); };
+  }
+};
+
+/* ============================================================
+   起動
+   ============================================================ */
+const TABS=[{id:'course',name:'コース',mod:Course},
+            {id:'learn',name:'まなぶ',mod:Learn},{id:'joseki',name:'定跡',mod:Joseki},
+            {id:'handi',name:'ハンデ',mod:Handi},{id:'watch',name:'観戦',mod:Watch},{id:'yose',name:'寄せ',mod:Yose},
+            {id:'play',name:'対局',mod:Play},{id:'drill',name:'ドリル',mod:Drill}];
+function go(id){
+  TABS.forEach(t=>{ const b=$('#tab-'+t.id); b.setAttribute('aria-selected',t.id===id); });
+  const v=$('#view'); v.innerHTML='';
+  const t=TABS.find(x=>x.id===id); t.mod.mount(v);
+  window.scrollTo({top:0,behavior:'instant'});
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const nav=$('#tabs');
+  TABS.forEach(t=>{
+    const b=el('button','tab',t.name); b.id='tab-'+t.id; b.setAttribute('role','tab'); b.setAttribute('aria-selected','false');
+    b.onclick=()=>go(t.id); nav.appendChild(b);
+  });
+  go('course');
+});
+</script>
+</body>
+</html>
