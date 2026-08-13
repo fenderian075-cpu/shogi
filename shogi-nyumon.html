@@ -332,6 +332,10 @@ select{min-height:44px}
 .tab[aria-selected="true"]{background:var(--shu-solid)}
 /* 5. 文字サイズ設定（大きな文字）に追従できるよう、本文は rem 基準に */
 @supports(font:-apple-system-body){ body{font-size:max(15.5px, .97rem)} }
+.sqname{font-family:var(--mincho);font-size:20px;fill:#8a6427;text-anchor:middle;dominant-baseline:central;
+  opacity:.72;pointer-events:none}
+.sqname.hi{fill:#b83b24;opacity:1;font-size:25px;font-weight:600}
+@media(max-width:760px){ .sqname{font-size:22px} .sqname.hi{font-size:27px} }
 </style>
 </head>
 <body>
@@ -1390,6 +1394,12 @@ class BoardView{
       s+= p.b[m.to] ? `<circle class="dot cap" cx="${cx}" cy="${cy}" r="20"/>`
                     : `<circle class="dot" cx="${cx}" cy="${cy}" r="8"/>`;
     }
+    if(this.o.sqNames){
+      for(let i=0;i<81;i++){
+        const on=this.sqHi===i;
+        s+=`<text class="sqname${on?' hi':''}" x="${MX+colOf(i)*S+S/2}" y="${MY+rowOf(i)*S+S/2}">${i2jp(i)}</text>`;
+      }
+    }
     for(let i=0;i<81;i++) s+=`<rect class="cellhit" data-i="${i}" x="${MX+colOf(i)*S}" y="${MY+rowOf(i)*S}" width="${S}" height="${S}"/>`;
     s+='</svg>';
     this.wrap.innerHTML=s; this.svg=$('svg',this.wrap);
@@ -1639,21 +1649,22 @@ const Learn={
     }
     if(sc.kind==='coords'){
       box.innerHTML=`<h2 class="sec">マスの名前を確かめる</h2>
-        <p class="lead">筋は右から１〜９、段は上から一〜九</p>
+        <p class="lead">盤のすべてのマスに名前を書いてあります</p>
         <div class="chips" id="cmode">
           <button class="chip" data-m="look">押して確かめる</button>
           <button class="chip" data-m="quiz">場所あてクイズ</button></div>
         <div id="lb"></div>
-        <p class="caption" id="cread">盤のどこでもいいので押してみてください。</p>
+        <p class="caption" id="cread">盤のどこでもいいので押してみてください。読み方が出ます。</p>
         <div id="cmsg"></div>`;
-      const bv=new BoardView($('#lb',box),{sides:[],hands:false});
+      const bv=new BoardView($('#lb',box),{sides:[],hands:false,sqNames:true});
       bv.setPos(Pos.from({pieces:[],hands:[{},{}],turn:0}));
       const SK=['いち','に','さん','よん','ご','ろく','なな','はち','きゅう'];
       const DK=['いち','に','さん','よん','ご','ろく','なな','はち','く'];
       const ZEN='１２３４５６７８９';
       const nameOf=i=>{const f=9-colOf(i),r=rowOf(i); return {txt:ZEN[f-1]+RANKJ[r], kana:SK[f-1]+DK[r], f, r:r+1};};
       let mode='look', q=null, n=0, ok=0;
-      const mark=i=>{ bv.targets=(i==null?[]:[{to:i}]); bv.render(); };
+      const names=on=>{ bv.o.sqNames=on; bv.render(); };
+      const mark=i=>{ bv.sqHi=(i==null?-1:i); bv.render(); };
       const ask=()=>{
         q=Math.floor(Math.random()*81); const nm=nameOf(q); n++;
         $('#cread',box).innerHTML=`第${n}問　<b style="font-family:var(--mincho);font-size:20px;color:var(--shu)">${nm.txt}</b>（${nm.kana}）はどこ？　盤を押してください。`;
@@ -1668,9 +1679,10 @@ const Learn={
         }else{
           mark(i);
           if(i===q){ ok++;
+            names(true); bv.sqHi=q; bv.render();
             $('#cmsg',box).innerHTML=`<div class="okbox big">正解。${nameOf(q).txt} です。（${n}問中 ${ok}問正解）</div>`;
             if(ok%5===0) celebrate($('#lb',box), ok+'問連続', 'その調子');
-            setTimeout(ask,900);
+            setTimeout(()=>{ names(false); ask(); },900);
           }else{
             $('#cmsg',box).innerHTML=`<div class="ngbox">そこは ${nm.txt} です。${nameOf(q).txt} は、右から${9-colOf(q)}番目の筋、上から${rowOf(q)+1}番目の段。もう一度どうぞ。</div>`;
           }
@@ -1680,8 +1692,9 @@ const Learn={
         mode=b.dataset.m;
         $$('#cmode .chip',box).forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===mode));
         $('#cmsg',box).innerHTML=''; n=0; ok=0;
-        if(mode==='quiz'){ ask(); }
-        else{ mark(null); $('#cread',box).textContent='盤のどこでもいいので押してみてください。'; }
+        bv.sqHi=-1;
+        if(mode==='quiz'){ names(false); ask(); }
+        else{ names(true); mark(null); $('#cread',box).textContent='盤のどこでもいいので押してみてください。読み方が出ます。'; }
       };});
       $$('#cmode .chip',box)[0].setAttribute('aria-pressed','true');
     }
